@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}My Notes - WebCyber{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>My notes</h2>
+  <p><a href="{{ url_for('notes.create_note') }}">Create a new note</a></p>
+
+  {% if notes %}
+    <ul class="note-list">
+      {% for note in notes %}
+        <li class="note-item">
+          <h3><a href="{{ url_for('notes.edit_note', id=note.id) }}">{{ note.title }}</a></h3>
+          <p>{{ note.content[:160] }}{% if note.content|length > 160 %}...{% endif %}</p>
+          <div class="actions">
+            <a href="{{ url_for('notes.edit_note', id=note.id) }}">Edit</a>
+            <a href="{{ url_for('notes.delete_note', id=note.id) }}">Delete</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No notes yet. Start by creating your first one.</p>
+  {% endif %}
+</section>
+{% endblock %}

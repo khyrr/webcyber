@@ -1,0 +1,93 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.container {
+  width: min(960px, 92%);
+  margin: 0 auto;
+}
+
+.site-header {
+  background: #111827;
+  color: #fff;
+  padding: 0.8rem 0;
+}
+
+.site-header a {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+
+.card {
+  background: #fff;
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+label {
+  display: block;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+input[type="submit"] {
+  margin-top: 0.9rem;
+  width: auto;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 0.9rem;
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+}
+
+.note-item {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.7rem 0;
+}
+
+.actions a {
+  margin-right: 0.7rem;
+}
+
+.flash-wrap {
+  margin-top: 1rem;
+}
+
+.flash {
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.flash-success {
+  background: #dcfce7;
+}
+
+.flash-danger {
+  background: #fee2e2;
+}
+
+.flash-info {
+  background: #dbeafe;
+}

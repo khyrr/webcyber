@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Note - WebCyber{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>Create note</h2>
+  <form method="post">
+    {{ form.hidden_tag() }}
+
+    <label for="title">Title</label>
+    {{ form.title(id='title') }}
+
+    <label for="content">Content</label>
+    {{ form.content(id='content', rows='8') }}
+
+    {{ form.submit(value='Create') }}
+  </form>
+</section>
+{% endblock %}

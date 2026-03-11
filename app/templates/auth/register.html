@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - WebCyber{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>Create account</h2>
+  <form method="post">
+    {{ form.hidden_tag() }}
+
+    <label for="username">Username</label>
+    {{ form.username(id='username') }}
+
+    <label for="email">Email</label>
+    {{ form.email(id='email') }}
+
+    <label for="password">Password</label>
+    {{ form.password(id='password') }}
+
+    <label for="confirm_password">Confirm password</label>
+    {{ form.confirm_password(id='confirm_password') }}
+
+    {{ form.submit() }}
+  </form>
+  <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+</section>
+{% endblock %}

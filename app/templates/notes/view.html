@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}View Note - WebCyber{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>{{ note.title }}</h2>
+  <p>{{ note.content }}</p>
+  <div class="actions">
+    <a href="{{ url_for('notes.list_notes') }}">Back to list</a>
+    <a href="{{ url_for('notes.edit_note', id=note.id) }}">Edit</a>
+  </div>
+</section>
+{% endblock %}

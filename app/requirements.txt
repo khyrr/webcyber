@@ -5,6 +5,7 @@ SQLAlchemy
 Flask-SQLAlchemy
 Flask-Login
 Flask-WTF
+email-validator
 Flask-Migrate
 psycopg2-binary
 python-dotenv
