@@ -8,4 +8,5 @@ Flask-WTF
 email-validator
 Flask-Migrate
 psycopg2-binary
+mistune
 python-dotenv

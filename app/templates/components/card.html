@@ -1,0 +1,42 @@
+{#
+  Usage:
+    {% from 'components/card.html' import card %}
+
+    {# Basic #}
+    {% call card(title='Title', subtitle='Sub') %}content{% endcall %}
+
+    {# With header action link #}
+    {% call card(title='Recent', action_label='View all', action_href=url_for('notes.list')) %}
+      content
+    {% endcall %}
+
+    {# Flush (no body padding) #}
+    {% call card(title='Table', pad='') %}…{% endcall %}
+#}
+
+{% macro card(title='', subtitle='', action_label='', action_href='#', extra='', pad='px-6 py-6') %}
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden {{ extra }}">
+  {% if title %}
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+    <div class="min-w-0">
+      <p class="text-sm font-semibold text-gray-900 truncate">{{ title }}</p>
+      {% if subtitle %}<p class="text-xs text-gray-400 mt-0.5">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if action_label %}
+    <a href="{{ action_href }}"
+       class="shrink-0 text-xs font-medium text-violet-600 hover:text-violet-700
+              hover:underline transition duration-150">
+      {{ action_label }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if pad %}
+  <div class="{{ pad }}">
+    {{ caller() }}
+  </div>
+  {% else %}
+  {{ caller() }}
+  {% endif %}
+</div>
+{% endmacro %}

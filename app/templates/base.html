@@ -1,42 +1,139 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}WebCyber Secure Notes{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <header class="site-header">
-    <div class="container">
-      <h1><a href="{{ url_for('notes.list_notes') }}">WebCyber Secure Notes</a></h1>
-      <nav>
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('notes.list_notes') }}">My Notes</a>
-          <a href="{{ url_for('notes.create_note') }}">New Note</a>
-          <a href="{{ url_for('auth.logout') }}">Logout</a>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}">Login</a>
-          <a href="{{ url_for('auth.register') }}">Register</a>
-        {% endif %}
-      </nav>
-    </div>
-  </header>
-
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <section class="flash-wrap">
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </section>
-      {% endif %}
-    {% endwith %}
-
-    {% block content %}{% endblock %}
-  </main>
-
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}WebCyber Secure Notes{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+              display: [
+                "Plus Jakarta Sans",
+                "Inter",
+                "ui-sans-serif",
+                "sans-serif",
+              ],
+              mono: [
+                "JetBrains Mono",
+                "ui-monospace",
+                "SFMono-Regular",
+                "monospace",
+              ],
+            },
+            fontSize: {
+              "2xs": [
+                "0.6875rem",
+                { lineHeight: "1rem", letterSpacing: "0.01em" },
+              ],
+              xs: [
+                "0.75rem",
+                { lineHeight: "1.125rem", letterSpacing: "0.01em" },
+              ],
+              sm: [
+                "0.8125rem",
+                { lineHeight: "1.25rem", letterSpacing: "0.005em" },
+              ],
+              base: ["0.9375rem", { lineHeight: "1.6", letterSpacing: "0" }],
+              md: [
+                "1.0625rem",
+                { lineHeight: "1.55", letterSpacing: "-0.005em" },
+              ],
+              lg: ["1.125rem", { lineHeight: "1.5", letterSpacing: "-0.01em" }],
+              xl: ["1.25rem", { lineHeight: "1.4", letterSpacing: "-0.015em" }],
+              "2xl": [
+                "1.5rem",
+                { lineHeight: "1.3", letterSpacing: "-0.02em" },
+              ],
+              "3xl": [
+                "1.875rem",
+                { lineHeight: "1.25", letterSpacing: "-0.025em" },
+              ],
+              "4xl": [
+                "2.25rem",
+                { lineHeight: "1.15", letterSpacing: "-0.03em" },
+              ],
+            },
+            fontWeight: {
+              light: "300",
+              normal: "400",
+              medium: "500",
+              semibold: "600",
+              bold: "700",
+              extrabold: "800",
+            },
+            colors: {
+              brand: {
+                50:  "#f0f9fa",
+                100: "#e6f4f6",
+                200: "#bcdde3",
+                300: "#92c7d0",
+                400: "#6ab0be",
+                500: "#4F95A3",
+                600: "#3e7e8c",
+                700: "#2F6573",
+                800: "#1e4a57",
+                900: "#0f2d37",
+              },
+              accent: {
+                500: "#E08B64",
+                600: "#c87450",
+              },
+              /* Override violet → brand teal (all violet-* classes use the brand palette) */
+              violet: {
+                50:  "#f0f9fa",
+                100: "#e6f4f6",
+                200: "#bcdde3",
+                300: "#92c7d0",
+                400: "#6ab0be",
+                500: "#4F95A3",
+                600: "#3e7e8c",
+                700: "#2F6573",
+                800: "#1e4a57",
+                900: "#0f2d37",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body class="h-full bg-gray-50 text-gray-900 antialiased">
+    <!-- Sidebar state: applied synchronously before first paint to prevent flash -->
+    <script>
+      (function () {
+        if (
+          window.innerWidth >= 1024 &&
+          localStorage.getItem("wc_sidebar") === "collapsed"
+        ) {
+          document.body.classList.add("sidebar-collapsed", "no-transition");
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              document.body.classList.remove("no-transition");
+            });
+          });
+        }
+      })();
+    </script>
+    {% block body %}{% endblock %}
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <!-- Global confirmation modal -->
+    {% include 'components/confirm_modal.html' %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
 </html>

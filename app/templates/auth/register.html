@@ -1,27 +1,96 @@
 {% extends 'base.html' %}
+{% from 'components/icons.html' import shield %}
+{% from 'components/form_input.html' import render %}
+{% from 'components/button.html' import btn_primary %}
 
-{% block title %}Register - WebCyber{% endblock %}
+{% block title %}Create Account — WebCyber{% endblock %}
 
-{% block content %}
-<section class="card">
-  <h2>Create account</h2>
-  <form method="post">
-    {{ form.hidden_tag() }}
+{% block body %}
+<div class="min-h-screen flex">
 
-    <label for="username">Username</label>
-    {{ form.username(id='username') }}
+  <!-- Left brand panel -->
+  <div class="hidden lg:flex lg:w-5/12 bg-violet-600 flex-col justify-between p-12 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-violet-500 via-violet-600 to-violet-800"></div>
+    <div class="absolute inset-0 opacity-[0.07]"
+         style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0);
+                background-size: 28px 28px;"></div>
 
-    <label for="email">Email</label>
-    {{ form.email(id='email') }}
+    <!-- Logo -->
+    <div class="relative z-10 flex items-center gap-3">
+      <div class="flex items-center justify-center w-9 h-9 bg-white/20 rounded-xl backdrop-blur-sm">
+        {{ shield(cls='w-5 h-5 text-white') }}
+      </div>
+      <span class="text-white font-semibold text-lg font-display">WebCyber</span>
+    </div>
 
-    <label for="password">Password</label>
-    {{ form.password(id='password') }}
+    <!-- Copy -->
+    <div class="relative z-10">
+      <h1 class="text-3xl font-bold text-white leading-snug mb-3">
+        A secure home<br>for every idea.
+      </h1>
+      <p class="text-violet-200 text-sm leading-relaxed">
+        Create your free account. No credit card required.
+      </p>
 
-    <label for="confirm_password">Confirm password</label>
-    {{ form.confirm_password(id='confirm_password') }}
+      <!-- Steps -->
+      <div class="mt-8 space-y-4">
+        {% for step in [
+            ('1', 'Create your account', 'Takes less than a minute.'),
+            ('2', 'Write your first note', 'Markdown, plain text — your choice.'),
+            ('3', 'Access anywhere', 'From any browser, any device.')
+          ] %}
+          <div class="flex items-start gap-3">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-white/20
+                         text-white text-xs font-bold shrink-0 mt-0.5">{{ step[0] }}</span>
+            <div>
+              <p class="text-sm font-medium text-white">{{ step[1] }}</p>
+              <p class="text-xs text-violet-300">{{ step[2] }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
 
-    {{ form.submit() }}
-  </form>
-  <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
-</section>
+    <p class="relative z-10 text-xs text-violet-400">Secure &middot; Private &middot; Yours alone</p>
+  </div>
+
+  <!-- Right: form -->
+  <div class="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
+    <div class="w-full max-w-sm">
+
+      <!-- Mobile logo -->
+      <div class="lg:hidden flex items-center gap-2 mb-8">
+        <div class="flex items-center justify-center w-8 h-8 bg-violet-600 rounded-lg">
+          {{ shield(cls='w-4 h-4 text-white') }}
+        </div>
+        <span class="font-semibold text-gray-900">WebCyber</span>
+      </div>
+
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Create your account</h2>
+        <p class="text-gray-500 text-sm mt-1">Start securing your notes in minutes</p>
+      </div>
+
+      {% include 'components/flash_messages.html' %}
+
+      <form method="post" class="space-y-4">
+        {{ form.hidden_tag() }}
+        {{ render(form.username, 'Username', placeholder='johndoe', autocomplete='username') }}
+        {{ render(form.email, 'Email address', type='email', placeholder='john@example.com', autocomplete='email') }}
+        {{ render(form.password, 'Password', type='password', placeholder='Min. 8 characters', autocomplete='new-password', hint='Must be at least 8 characters') }}
+        {{ render(form.confirm_password, 'Confirm password', type='password', placeholder='••••••••', autocomplete='new-password') }}
+        <div class="pt-1">
+          {{ btn_primary('Create account', show_icon=false, extra='w-full') }}
+        </div>
+      </form>
+
+      <p class="mt-6 text-center text-sm text-gray-500">
+        Already have an account?
+        <a href="{{ url_for('auth.login') }}"
+           class="font-medium text-violet-600 hover:text-violet-700 transition">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
 {% endblock %}
+  

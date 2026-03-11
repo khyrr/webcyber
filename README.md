@@ -48,6 +48,7 @@ All planning and architecture documentation is in the `docs/` folder:
 | 12 | [Folder Structure](docs/12-FOLDER-STRUCTURE.md) | Project layout, database schema |
 | 13 | [Development Roadmap](docs/13-DEVELOPMENT-ROADMAP.md) | 7-phase step-by-step plan |
 | 14 | [Risk Analysis](docs/14-RISK-ANALYSIS.md) | 9 identified risks with mitigations |
+| 15 | [UI Components & Frontend](docs/15-UI-COMPONENTS.md) | Template system, component macros, CSS, JS |
 
 ---
 
@@ -70,7 +71,7 @@ All planning and architecture documentation is in the `docs/` folder:
 ## Project Status
 
 - [x] Architecture planning and documentation
-- [ ] Flask application development
+- [x] Flask application development
 - [ ] Docker containerization
 - [ ] AWS infrastructure provisioning
 - [ ] DNS and HTTPS configuration

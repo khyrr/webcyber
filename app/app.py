@@ -1,8 +1,15 @@
 from flask import Flask, redirect, url_for
+from markupsafe import Markup
+import mistune
 
 from app.config import Config
 from app.extensions import db, login_manager, csrf, migrate
 from app.models import User
+
+_md = mistune.create_markdown(
+    plugins=['strikethrough', 'table', 'task_lists'],
+    escape=True,
+)
 
 def create_app():
     app = Flask(__name__)
@@ -13,6 +20,11 @@ def create_app():
     login_manager.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+
+    # Markdown filter — safe because mistune escape=True
+    @app.template_filter('markdown')
+    def markdown_filter(text):
+        return Markup(_md(text or ''))
 
     # Login manager configuration
     login_manager.login_view = "auth.login"

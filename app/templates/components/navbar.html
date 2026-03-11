@@ -1,0 +1,39 @@
+{% from 'components/icons.html' import menu, collapse, plus %}
+<header class="sticky top-0 z-10 flex items-center h-16 px-4 lg:px-6 bg-white border-b border-gray-200">
+  <div class="flex items-center gap-3 w-full">
+
+    <!-- Mobile hamburger -->
+    <button id="mobile-sidebar-toggle" type="button"
+            class="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+      {{ menu(cls='w-5 h-5') }}
+    </button>
+
+    <!-- Desktop collapse toggle -->
+    <button id="sidebar-toggle" type="button"
+            class="hidden lg:flex p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+      {{ collapse(cls='w-5 h-5') }}
+    </button>
+
+    <!-- Divider -->
+    <div class="hidden lg:block w-px h-5 bg-gray-200"></div>
+
+    <!-- Page title -->
+    <div class="flex-1 min-w-0">
+      <h1 class="text-sm font-semibold text-gray-900 truncate">{{ page_title | default('Dashboard') }}</h1>
+      {% if page_subtitle is defined and page_subtitle %}
+        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ page_subtitle }}</p>
+      {% endif %}
+    </div>
+
+    <!-- Optional CTA -->
+    {% if navbar_cta_url is defined and navbar_cta_url %}
+      <a href="{{ navbar_cta_url }}"
+         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-700
+                text-white text-sm font-semibold rounded-lg transition shadow-sm shrink-0">
+        {{ plus(cls='w-4 h-4') }}
+        {{ navbar_cta_label | default('New') }}
+      </a>
+    {% endif %}
+
+  </div>
+</header>

@@ -87,5 +87,36 @@ class Note(db.Model):
         onupdate=datetime.utcnow
     )
 
+    is_pinned = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False,
+        server_default='0'
+    )
+
+    is_archived = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False,
+        server_default='0'
+    )
+
+    archived_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    is_trashed = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False,
+        server_default='0'
+    )
+
+    trashed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
     def __repr__(self):
         return f"<Note {self.title}>"

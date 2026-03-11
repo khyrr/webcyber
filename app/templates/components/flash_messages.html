@@ -1,0 +1,44 @@
+{% from 'components/icons.html' import status_success, status_error, status_warning, status_info, close %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="space-y-2.5 mb-6" role="region" aria-label="Notifications">
+      {% for category, message in messages %}
+        <div role="alert"
+             aria-live="polite"
+             class="flex items-start gap-3 pl-4 pr-3 py-3 rounded-xl border text-sm shadow-sm transition-all
+                    {% if category == 'success' %}bg-green-50  border-green-200  text-green-900
+                    {% elif category == 'danger'  %}bg-rose-50   border-rose-200   text-rose-900
+                    {% elif category == 'warning' %}bg-amber-50  border-amber-200  text-amber-900
+                    {% else                       %}bg-cyan-50   border-cyan-200   text-cyan-900{% endif %}">
+
+          <!-- Status icon -->
+          <span class="shrink-0 mt-0.5
+                       {% if category == 'success' %}text-green-500
+                       {% elif category == 'danger'  %}text-rose-500
+                       {% elif category == 'warning' %}text-amber-500
+                       {% else                       %}text-cyan-500{% endif %}">
+            {% if category == 'success' %}{{ status_success(cls='w-4 h-4') }}
+            {% elif category == 'danger'  %}{{ status_error(cls='w-4 h-4') }}
+            {% elif category == 'warning' %}{{ status_warning(cls='w-4 h-4') }}
+            {% else                       %}{{ status_info(cls='w-4 h-4') }}{% endif %}
+          </span>
+
+          <!-- Message -->
+          <p class="flex-1 leading-snug pt-0.5 font-medium">{{ message }}</p>
+
+          <!-- Dismiss -->
+          <button type="button"
+                  onclick="this.closest('[role=alert]').remove()"
+                  aria-label="Dismiss"
+                  class="shrink-0 -mt-0.5 -mr-0.5 p-1.5 rounded-lg transition-colors
+                         {% if category == 'success' %}text-green-400 hover:text-green-700 hover:bg-green-100
+                         {% elif category == 'danger'  %}text-rose-400  hover:text-rose-700  hover:bg-rose-100
+                         {% elif category == 'warning' %}text-amber-400 hover:text-amber-700 hover:bg-amber-100
+                         {% else                       %}text-cyan-400  hover:text-cyan-700  hover:bg-cyan-100{% endif %}">
+            {{ close(cls='w-3.5 h-3.5') }}
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

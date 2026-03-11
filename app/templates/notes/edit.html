@@ -1,20 +1,364 @@
 {% extends 'base.html' %}
+{% from 'components/icons.html' import chevron_right, check, info, trash %}
 
-{% block title %}Edit Note - WebCyber{% endblock %}
+{% block title %}Edit — {{ note.title }} — WebCyber{% endblock %}
 
-{% block content %}
-<section class="card">
-  <h2>Edit note</h2>
-  <form method="post">
-    {{ form.hidden_tag() }}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<style>
+  /* ── EasyMDE theme override ───────────────────────── */
+  .EasyMDEContainer { border-radius: 8px; overflow: hidden; }
+  .EasyMDEContainer .CodeMirror {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    min-height: 320px;
+    color: #111827;
+  }
+  .EasyMDEContainer .CodeMirror:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .editor-toolbar {
+    border: 1px solid #d1d5db;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 8px 8px 0 0;
+    background: #f9fafb;
+    padding: 4px 8px;
+    opacity: 1;
+  }
+  .editor-toolbar button {
+    color: #4b5563 !important;
+    border-radius: 5px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+  .editor-toolbar button:hover,
+  .editor-toolbar button.active {
+    background: #e0e7ff !important;
+    color: #2563eb !important;
+    border-color: transparent !important;
+  }
+  .editor-toolbar i.separator { border-color: #e5e7eb; }
+  .editor-preview {
+    background: #fff;
+    padding: 1rem 1.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: #374151;
+  }
+  .editor-preview h1, .editor-preview h2,
+  .editor-preview h3, .editor-preview h4 {
+    font-weight: 700; color: #111827; margin-top: 1.25em; margin-bottom: 0.4em;
+  }
+  .editor-preview h1 { font-size: 1.4rem; }
+  .editor-preview h2 { font-size: 1.2rem; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.25em; }
+  .editor-preview h3 { font-size: 1.05rem; }
+  .editor-preview p  { margin: 0.75em 0; }
+  .editor-preview a  { color: #2563eb; text-decoration: underline; }
+  .editor-preview code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
+    background: #f3f4f6;
+    color: #1d4ed8;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+  .editor-preview pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1em 1.25em;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  .editor-preview pre code { background: transparent; color: inherit; padding: 0; }
+  .editor-preview blockquote {
+    border-left: 3px solid #2563eb;
+    padding: 0.5em 1em;
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+    margin: 1em 0;
+  }
+  .editor-preview ul { list-style: disc; padding-left: 1.5em; margin: 0.75em 0; }
+  .editor-preview ol { list-style: decimal; padding-left: 1.5em; margin: 0.75em 0; }
+  .editor-preview table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .editor-preview th { background: #f9fafb; font-weight: 600; padding: 0.5em 0.75em; border: 1px solid #e5e7eb; }
+  .editor-preview td { padding: 0.5em 0.75em; border: 1px solid #e5e7eb; }
+  .editor-preview-side { border-left: 1px solid #e5e7eb; }
+  .editor-statusbar { border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;
+    background: #f9fafb; padding: 3px 12px; font-size: 0.7rem; color: #9ca3af; }
+  /* ── Fullscreen / side-by-side: contained inside sidebar + navbar ── */
+  .editor-toolbar.fullscreen {
+    position: fixed !important;
+    top: 64px !important;          /* navbar height (h-16) */
+    left: var(--sb-w) !important;
+    right: 0 !important;
+    width: auto !important;
+    z-index: 20 !important;
+  }
+  .CodeMirror-fullscreen {
+    position: fixed !important;    /* top set dynamically by JS */
+    left: var(--sb-w) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    z-index: 20 !important;
+  }
+  .editor-preview-active-side {
+    position: fixed !important;    /* top set dynamically by JS */
+    left: calc(50vw + var(--sb-w) / 2) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+  }
+  .EasyMDEContainer:has(.CodeMirror-fullscreen) .editor-statusbar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: var(--sb-w) !important;
+    right: 0 !important;
+    z-index: 21 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+  body.sidebar-collapsed .editor-toolbar.fullscreen,
+  body.sidebar-collapsed .CodeMirror-fullscreen {
+    left: var(--sb-w-sm) !important;
+  }
+  body.sidebar-collapsed .editor-preview-active-side {
+    left: calc(50vw + var(--sb-w-sm) / 2) !important;
+  }
+  body.sidebar-collapsed .EasyMDEContainer:has(.CodeMirror-fullscreen) .editor-statusbar {
+    left: var(--sb-w-sm) !important;
+  }
+</style>
+{% endblock %}
 
-    <label for="title">Title</label>
-    {{ form.title(id='title') }}
+{% block body %}
+{% include 'components/sidebar.html' %}
 
-    <label for="content">Content</label>
-    {{ form.content(id='content', rows='8') }}
+<div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
+  {% set page_title = 'Edit Note' %}
+  {% include 'components/navbar.html' %}
 
-    {{ form.submit(value='Update') }}
-  </form>
-</section>
+  <main class="flex-1">
+
+    <!-- Breadcrumb + action bar -->
+    <div class="sticky top-16 z-10 bg-white border-b border-gray-100
+                px-3 sm:px-5 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+      <nav class="flex items-center gap-1.5 text-xs text-gray-400 min-w-0 overflow-hidden">
+        <a href="{{ url_for('notes.list_notes') }}"
+           class="hover:text-violet-600 transition shrink-0">My Notes</a>
+        {{ chevron_right(cls='w-3.5 h-3.5 shrink-0') }}
+        <a href="{{ url_for('notes.view_note', id=note.id) }}"
+           class="truncate hover:text-violet-600 transition">{{ note.title }}</a>
+        {{ chevron_right(cls='w-3.5 h-3.5 shrink-0') }}
+        <span class="font-medium text-gray-600 shrink-0">Edit</span>
+      </nav>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <a href="{{ url_for('notes.view_note', id=note.id) }}"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                  bg-white border border-gray-200 text-gray-500 rounded-lg
+                  hover:bg-gray-50 hover:text-gray-700 transition">
+          Cancel
+        </a>
+        <button type="submit" form="edit-form"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                       bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+          {{ check(cls='w-3.5 h-3.5') }}
+          Save changes
+        </button>
+      </div>
+    </div>
+
+    <!-- Content row -->
+    <div class="flex gap-0 max-w-screen-xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 lg:py-8">
+
+      <!-- Main form -->
+      <div class="flex-1 min-w-0">
+        {% include 'components/flash_messages.html' %}
+
+        <div class="bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <form id="edit-form" method="post" class="divide-y divide-gray-100">
+            {{ form.hidden_tag() }}
+
+            <!-- Title -->
+            <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+              <label for="title"
+                     class="block text-2xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Title
+              </label>
+              <input type="text" id="title" name="title"
+                     value="{{ form.title.data or note.title }}"
+                     autocomplete="off"
+                     class="w-full text-xl sm:text-2xl font-bold text-gray-900
+                            bg-transparent border-0 outline-none focus:ring-0 p-0 leading-snug
+                            cursor-text rounded transition-colors
+                            hover:bg-gray-50 focus:bg-white">
+              {% for err in form.title.errors %}
+                <p class="mt-1.5 text-xs text-rose-500 flex items-center gap-1">
+                  {{ info(cls='w-3.5 h-3.5 shrink-0') }}
+                  {{ err }}
+                </p>
+              {% endfor %}
+            </div>
+
+            <!-- Content (EasyMDE) -->
+            <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+              <label for="content"
+                     class="block text-2xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Content
+              </label>
+              <textarea id="content" name="content">{{ form.content.data or note.content }}</textarea>
+              {% for err in form.content.errors %}
+                <p class="mt-1.5 text-xs text-rose-500">{{ err }}</p>
+              {% endfor %}
+            </div>
+
+            <!-- Mobile / tablet bottom actions -->
+            <div class="xl:hidden px-4 sm:px-6 py-3 flex items-center justify-between gap-2 bg-gray-50/60">
+              <!-- Danger: trash -->
+              <form method="POST" action="{{ url_for('notes.delete_note', id=note.id) }}"
+                    data-confirm="Move this note to Trash?"
+                    data-confirm-danger="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                               bg-white border border-rose-100 text-rose-500 rounded-lg
+                               hover:bg-rose-50 hover:text-rose-700 transition">
+                  {{ trash(cls='w-3.5 h-3.5') }}
+                  Trash
+                </button>
+              </form>
+              <!-- Save / cancel -->
+              <div class="flex items-center gap-2">
+                <a href="{{ url_for('notes.view_note', id=note.id) }}"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-medium
+                          bg-white border border-gray-200 text-gray-500 rounded-lg
+                          hover:bg-gray-50 transition">
+                  Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                               bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+                  {{ check(cls='w-3.5 h-3.5') }}
+                  Save
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- Right panel (xl only) -->
+      <aside class="hidden xl:flex flex-col gap-4 w-60 shrink-0 ml-6">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sticky top-32">
+
+          <!-- Note metadata -->
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Details</p>
+          <dl class="space-y-3 text-xs mb-4">
+            <div>
+              <dt class="text-gray-400 mb-0.5">Created</dt>
+              <dd class="font-medium text-gray-700">{{ note.created_at.strftime('%b %d, %Y') }}</dd>
+            </div>
+            <div>
+              <dt class="text-gray-400 mb-0.5">Last saved</dt>
+              {% if note.updated_at and note.updated_at != note.created_at %}
+                <dd class="font-medium text-gray-700">{{ note.updated_at.strftime('%b %d, %Y') }}</dd>
+                <dd class="text-gray-400">{{ note.updated_at.strftime('%H:%M') }}</dd>
+              {% else %}
+                <dd class="text-gray-400 italic">Never edited</dd>
+              {% endif %}
+            </div>
+          </dl>
+
+          <!-- Danger zone -->
+          <div class="border-t border-gray-100 pt-4 space-y-1.5">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions</p>
+            <form method="POST" action="{{ url_for('notes.delete_note', id=note.id) }}"
+                  data-confirm="Move this note to Trash?"
+                  data-confirm-danger="true">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit"
+                      class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-500
+                             bg-gray-50 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition">
+                {{ trash(cls='w-3.5 h-3.5') }}
+                Move to Trash
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+  var easyMDE = new EasyMDE({
+    element: document.getElementById('content'),
+    spellChecker: false,
+    autofocus: false,
+    toolbar: [
+      'bold', 'italic', 'strikethrough', '|',
+      'heading-1', 'heading-2', 'heading-3', '|',
+      'quote', 'code', 'table', '|',
+      'unordered-list', 'ordered-list', 'task-list', '|',
+      'link', '|',
+      'preview', 'side-by-side', 'fullscreen', '|',
+      'guide'
+    ],
+    status: ['lines', 'words', 'cursor'],
+    minHeight: '320px',
+    renderingConfig: { singleLineBreaks: false },
+  });
+
+  // Dynamically set top of editor / preview so they sit just below the toolbar
+  function syncFullscreenTop() {
+    var tb = document.querySelector('.editor-toolbar.fullscreen');
+    if (!tb) return;
+    var top = 64 + tb.offsetHeight;
+    var cm = document.querySelector('.CodeMirror-fullscreen');
+    var pre = document.querySelector('.editor-preview-active-side');
+    if (cm)  cm.style.top  = top + 'px';
+    if (pre) pre.style.top = top + 'px';
+  }
+
+  new MutationObserver(function() { setTimeout(syncFullscreenTop, 0); })
+    .observe(easyMDE.codemirror.getWrapperElement(), { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(function() { setTimeout(syncFullscreenTop, 0); })
+    .observe(document.querySelector('.editor-toolbar'), { attributes: true, attributeFilter: ['class'] });
+
+  // ── Unsaved-changes guard ────────────────────────────────────
+  var dirty = false;
+  var originalTitle   = document.getElementById('title').value;
+  var originalContent = easyMDE.value();
+
+  document.getElementById('title').addEventListener('input', function () {
+    dirty = this.value !== originalTitle;
+  });
+  easyMDE.codemirror.on('change', function () {
+    dirty = easyMDE.value() !== originalContent;
+  });
+  // Mark clean on intentional save (form submit)
+  document.getElementById('edit-form').addEventListener('submit', function () {
+    dirty = false;
+  });
+  window.addEventListener('beforeunload', function (e) {
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+</script>
 {% endblock %}
