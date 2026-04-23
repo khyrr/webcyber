@@ -58,18 +58,15 @@ jobs:
           script: |
             set -e
 
-            # Install docker-compose if missing
-            if [ ! -f "$HOME/bin/docker-compose" ]; then
-              mkdir -p "$HOME/bin"
-              curl -fsSL "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64" \
-                -o "$HOME/bin/docker-compose"
-              chmod +x "$HOME/bin/docker-compose"
+            # Install Docker Engine + Compose v2 plugin if missing
+            if ! command -v docker &>/dev/null; then
+              curl -fsSL https://get.docker.com | sudo sh
+              sudo usermod -aG docker $USER
             fi
-            export PATH="$HOME/bin:$PATH"
 
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" \
-              | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+              | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Clone repo on first deploy, pull updates after
             if [ ! -d "$HOME/webcyber" ]; then
@@ -81,6 +78,6 @@ jobs:
             cd "$HOME/webcyber"
 
             export APP_IMAGE="ghcr.io/${{ github.repository }}:latest"
-            docker-compose pull app
-            docker-compose up -d --no-build
-            docker image prune -f
+            sudo docker compose pull app
+            sudo docker compose up -d --no-build
+            sudo docker image prune -f
