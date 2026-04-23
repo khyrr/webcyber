@@ -15,8 +15,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout
@@ -60,8 +58,8 @@ jobs:
           script: |
             set -e
 
-            # Install docker-compose v1 to ~/bin if not present
-            if ! command -v docker-compose &>/dev/null && [ ! -f "$HOME/bin/docker-compose" ]; then
+            # Install docker-compose if missing
+            if [ ! -f "$HOME/bin/docker-compose" ]; then
               mkdir -p "$HOME/bin"
               curl -fsSL "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64" \
                 -o "$HOME/bin/docker-compose"
@@ -69,8 +67,8 @@ jobs:
             fi
             export PATH="$HOME/bin:$PATH"
 
-            # Login to GHCR to pull the image
-            echo "${{ secrets.GHCR_TOKEN }}" \
+            # Login to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" \
               | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Clone repo on first deploy, pull updates after
@@ -82,9 +80,7 @@ jobs:
 
             cd "$HOME/webcyber"
 
-            # Pull latest image and restart
             export APP_IMAGE="ghcr.io/${{ github.repository }}:latest"
             docker-compose pull app
             docker-compose up -d --no-build
-
             docker image prune -f
