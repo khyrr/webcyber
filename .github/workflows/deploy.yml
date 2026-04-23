@@ -85,5 +85,28 @@ jobs:
 
             export APP_IMAGE="ghcr.io/${{ github.repository }}:latest"
             sudo -E docker compose pull app
+
+            CERT_PATH="/var/lib/docker/volumes/webcyber_certbot_certs/_data/live/webcyber.app/fullchain.pem"
+
+            # First deploy: get cert before enabling SSL in nginx
+            if [ ! -f "$CERT_PATH" ]; then
+              # Disable SSL config so nginx starts on HTTP only
+              sudo rm -f "$HOME/webcyber/nginx/conf.d/ssl.conf"
+              sudo -E docker compose up -d nginx app db
+              sleep 5
+              # Obtain certificate via webroot challenge
+              sudo docker run --rm \
+                -v webcyber_certbot_webroot:/var/www/certbot \
+                -v webcyber_certbot_certs:/etc/letsencrypt \
+                certbot/certbot certonly --webroot \
+                  -w /var/www/certbot \
+                  -d webcyber.app -d www.webcyber.app \
+                  --email mohamedsalemkhyarhoum@gmail.com \
+                  --agree-tos --no-eff-email --non-interactive
+              # Restore SSL config and reload nginx
+              sudo git -C "$HOME/webcyber" checkout nginx/conf.d/ssl.conf
+              sudo docker compose exec nginx nginx -s reload
+            fi
+
             sudo -E docker compose up -d --no-build
             sudo -E docker image prune -f
