@@ -78,6 +78,6 @@ jobs:
             cd "$HOME/webcyber"
 
             export APP_IMAGE="ghcr.io/${{ github.repository }}:latest"
-            sudo docker compose pull app
-            sudo docker compose up -d --no-build
-            sudo docker image prune -f
+            sudo -E docker compose pull app
+            sudo -E docker compose up -d --no-build
+            sudo -E docker image prune -f
