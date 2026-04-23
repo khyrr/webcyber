@@ -4,7 +4,7 @@ Instance Type:     t3.micro
 Region:            us-east-1
 Account ID:        551732801904
 
-Public IPv4:       54.198.196.126
+Public IPv4:       54.198.196.127
 Private IPv4:      172.31.41.155
 Public DNS:        ec2-54-198-196-126.compute-1.amazonaws.com
 
