@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from 'components/icons.html' import search, plus, pin, dots_horizontal, edit, archive, trash, document, download %}
+{% from 'components/icons.html' import plus, pin, dots_horizontal, edit, archive, trash, document, download, search %}
 
 {% block title %}My Notes — WebCyber{% endblock %}
 
@@ -8,37 +8,12 @@
 
 <div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
   {% set page_title = 'My Notes' %}
+  {% set navbar_search_enabled = true %}
+  {% set navbar_actions_menu = true %}
+  {% set navbar_note_count = notes | length %}
   {% include 'components/navbar.html' %}
 
   <main class="flex-1">
-
-    <!-- Sticky toolbar -->
-    <div class="sticky top-16 z-10 bg-white border-b border-gray-100
-                px-3 sm:px-5 lg:px-8 py-2.5 flex items-center justify-between gap-3">
-
-      <!-- Search -->
-      <div class="relative flex-1 max-w-xs">
-        {{ search(cls='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none') }}
-        <input id="note-search" type="search" placeholder="Search notes…"
-               class="w-full pl-9 pr-4 py-1.5 text-xs border border-gray-200 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
-                      bg-white placeholder-gray-400"/>
-      </div>
-
-      <!-- Right side: count + new note -->
-      <div class="flex items-center gap-3 shrink-0">
-        <span class="hidden sm:block text-xs text-gray-400">
-          <span id="note-count" class="font-semibold text-gray-700">{{ notes | length }}</span>
-          note{% if notes | length != 1 %}s{% endif %}
-        </span>
-        <a href="{{ url_for('notes.create_note') }}"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                  bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
-          {{ plus(cls='w-3.5 h-3.5') }}
-          New Note
-        </a>
-      </div>
-    </div>
 
     <div class="max-w-screen-xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 lg:py-8">
       {% include 'components/flash_messages.html' %}
@@ -181,7 +156,7 @@
           <p class="text-sm text-gray-500 mb-6 max-w-xs">
             Create your first note. Everything you write is private and only visible to you.
           </p>
-          <a href="{{ url_for('notes.create_note') }}"
+          <a href="{{ url_for('notes.new_note') }}"
              class="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700
                     text-white text-sm font-semibold rounded-lg transition shadow-sm">
             {{ plus(cls='w-4 h-4') }}
@@ -231,6 +206,16 @@
     });
   }
 
+  // ── Toolbar actions menu ──────────────────────────────────
+  function toggleActionsMenu(btn) {
+    var menu = btn.nextElementSibling;
+    var isOpen = !menu.classList.contains('hidden');
+    document.querySelectorAll('.actions-menu').forEach(function (m) {
+      m.classList.add('hidden');
+    });
+    if (!isOpen) menu.classList.remove('hidden');
+  }
+
   // ── Per-card ⋮ menu ─────────────────────────────────────────
   function toggleCardMenu(btn) {
     var menu = btn.nextElementSibling;
@@ -245,6 +230,11 @@
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-card-menu]')) {
       document.querySelectorAll('.card-menu').forEach(function (m) {
+        m.classList.add('hidden');
+      });
+    }
+    if (!e.target.closest('[data-actions-menu]')) {
+      document.querySelectorAll('.actions-menu').forEach(function (m) {
         m.classList.add('hidden');
       });
     }

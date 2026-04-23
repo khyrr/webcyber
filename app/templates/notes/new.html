@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% from 'components/icons.html' import plus, download, info, close %}
+
+{% block title %}Create New Page — WebCyber{% endblock %}
+
+{% block body %}
+{% include 'components/sidebar.html' %}
+
+<div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
+  {% set page_title = 'Create New Page' %}
+  {% set page_subtitle = 'Choose how to start your next page.' %}
+  {% include 'components/navbar.html' %}
+
+  <main class="flex-1">
+    <div class="max-w-screen-md mx-auto px-3 sm:px-5 lg:px-8 py-8 sm:py-10">
+      {% include 'components/flash_messages.html' %}
+
+      <div class="mb-4 sm:mb-6">
+        <h2 class="text-lg font-semibold text-gray-900">Choose how to start</h2>
+        <p class="mt-1 text-sm text-gray-500">Create a blank note or import a file.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="{{ url_for('notes.create_note') }}"
+           class="group bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-sm transition">
+          <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-50 text-violet-600 mb-3">
+            {{ plus(cls='w-5 h-5') }}
+          </div>
+          <p class="text-sm font-semibold text-gray-900 group-hover:text-violet-700 transition">Blank Note</p>
+          <p class="mt-1 text-xs text-gray-500">Open the editor and start writing from scratch.</p>
+        </a>
+
+        <button type="button"
+           data-open-import-modal
+           class="group text-left bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-sm transition">
+          <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-50 text-violet-600 mb-3">
+            {{ download(cls='w-5 h-5') }}
+          </div>
+          <p class="text-sm font-semibold text-gray-900 group-hover:text-violet-700 transition">Import Note</p>
+          <p class="mt-1 text-xs text-gray-500">Upload a .md or .txt file and convert it to a note.</p>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="import-modal"
+  class="{% if open_import_modal %}flex {% else %}hidden {% endif %}fixed inset-0 z-50 items-center justify-center px-4">
+  <div id="import-modal-backdrop"
+       class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div>
+        <p class="text-sm font-semibold text-gray-900">Import Note</p>
+        <p class="mt-0.5 text-xs text-gray-500">Upload a Markdown or text file and continue editing it.</p>
+      </div>
+      <button type="button"
+              data-close-import-modal
+              class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+              aria-label="Close import modal">
+        {{ close(cls='w-4 h-4') }}
+      </button>
+    </div>
+
+    <form method="post" action="{{ url_for('notes.import_note') }}" enctype="multipart/form-data" class="p-5 space-y-5">
+      {{ import_form.hidden_tag() }}
+
+      <div>
+        <label for="note_file" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          File
+        </label>
+        <input id="note_file" name="note_file" type="file" accept=".md,.txt,text/plain,text/markdown"
+               class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-3 file:rounded-lg
+                      file:border-0 file:text-xs file:font-medium file:bg-violet-50 file:text-violet-700
+                      hover:file:bg-violet-100 cursor-pointer border border-gray-200 rounded-lg p-2" />
+        {% for err in import_form.note_file.errors %}
+          <p class="mt-1.5 text-xs text-rose-500 flex items-center gap-1">
+            {{ info(cls='w-3.5 h-3.5 shrink-0') }}
+            {{ err }}
+          </p>
+        {% endfor %}
+      </div>
+
+      <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+        {{ info(cls='w-4 h-4 text-blue-500 mt-0.5 shrink-0') }}
+        <p class="text-xs text-blue-700 leading-relaxed">
+          The imported note title is generated from the first non-empty line of the file or from the filename.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button type="button"
+                data-close-import-modal
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+          {{ download(cls='w-3.5 h-3.5') }}
+          Import Note
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var modal = document.getElementById('import-modal');
+    if (!modal) return;
+
+    var backdrop = document.getElementById('import-modal-backdrop');
+    var fileInput = document.getElementById('note_file');
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (fileInput) fileInput.focus();
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.querySelectorAll('[data-open-import-modal]').forEach(function (el) {
+      el.addEventListener('click', openModal);
+    });
+
+    document.querySelectorAll('[data-close-import-modal]').forEach(function (el) {
+      el.addEventListener('click', closeModal);
+    });
+
+    if (backdrop) {
+      backdrop.addEventListener('click', closeModal);
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  })();
+</script>
+{% endblock %}

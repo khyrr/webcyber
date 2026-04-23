@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileRequired
 from wtforms import StringField, PasswordField, TextAreaField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 
@@ -69,3 +70,12 @@ class NoteForm(FlaskForm):
     )
 
     submit = SubmitField("Save Note")
+
+
+class NoteImportForm(FlaskForm):
+    note_file = FileField(
+        "Note file",
+        validators=[FileRequired(message="Please choose a .md or .txt file")]
+    )
+
+    submit = SubmitField("Import Note")

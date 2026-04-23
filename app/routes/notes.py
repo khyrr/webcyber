@@ -1,15 +1,41 @@
 from datetime import datetime, timedelta
 
+from pathlib import Path
+
 from flask import Blueprint, render_template, redirect, url_for, flash, abort, Response, request
 from flask_login import login_required, current_user
 
-from app.forms import NoteForm
+from app.forms import NoteForm, NoteImportForm
 from app.models import Note
 from app.extensions import db
 
 notes_bp = Blueprint("notes", __name__, url_prefix="/notes")
 
 _TRASH_TTL_DAYS = 30
+_IMPORT_ALLOWED_EXTENSIONS = {".md", ".txt"}
+
+
+def _decode_uploaded_note(raw_bytes):
+    for encoding in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            return raw_bytes.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return None
+
+
+def _derive_import_title(filename, content):
+    stem = Path(filename).stem.strip() or "Imported note"
+
+    for line in content.splitlines():
+        clean = line.strip()
+        if not clean:
+            continue
+        if clean.startswith("#"):
+            clean = clean.lstrip("#").strip()
+        return clean[:200] or stem[:200]
+
+    return stem[:200]
 
 
 @notes_bp.route("/")
@@ -22,6 +48,23 @@ def list_notes():
         .all()
     )
     return render_template("notes/list.html", notes=notes)
+
+
+@notes_bp.route("/new")
+@login_required
+def new_note():
+    open_import_modal = request.args.get("import") in {"1", "true", "yes"}
+    return render_template(
+        "notes/new.html",
+        import_form=NoteImportForm(),
+        open_import_modal=open_import_modal,
+    )
+
+
+@notes_bp.route("/settings")
+@login_required
+def settings_page():
+    return render_template("notes/settings.html")
 
 
 @notes_bp.route("/create", methods=["GET", "POST"])
@@ -41,6 +84,62 @@ def create_note():
         return redirect(url_for("notes.list_notes"))
 
     return render_template("notes/create.html", form=form)
+
+
+@notes_bp.route("/import", methods=["GET", "POST"])
+@login_required
+def import_note():
+    form = NoteImportForm()
+
+    if form.validate_on_submit():
+        uploaded = form.note_file.data
+        filename = (uploaded.filename or "").strip()
+        extension = Path(filename).suffix.lower()
+
+        if extension not in _IMPORT_ALLOWED_EXTENSIONS:
+            flash("Only .md and .txt files are supported.", "error")
+            return render_template(
+                "notes/new.html",
+                import_form=form,
+                open_import_modal=True,
+            ), 400
+
+        raw = uploaded.read()
+        if not raw:
+            flash("The uploaded file is empty.", "warning")
+            return render_template(
+                "notes/new.html",
+                import_form=form,
+                open_import_modal=True,
+            ), 400
+
+        content = _decode_uploaded_note(raw)
+        if content is None:
+            flash("Could not decode file. Please upload UTF-8 or Latin-1 text.", "error")
+            return render_template(
+                "notes/new.html",
+                import_form=form,
+                open_import_modal=True,
+            ), 400
+
+        content = content.strip()
+        if not content:
+            flash("The uploaded file has no readable text.", "warning")
+            return render_template(
+                "notes/new.html",
+                import_form=form,
+                open_import_modal=True,
+            ), 400
+
+        title = _derive_import_title(filename, content)
+        note = Note(title=title, content=content, user_id=current_user.id)
+        db.session.add(note)
+        db.session.commit()
+
+        flash("Note imported successfully.", "success")
+        return redirect(url_for("notes.edit_note", id=note.id))
+
+    return render_template("notes/import.html", form=form)
 
 
 @notes_bp.route("/<int:id>")

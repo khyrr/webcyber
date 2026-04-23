@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% from 'components/icons.html' import info, download %}
+
+{% block title %}Import Note — WebCyber{% endblock %}
+
+{% block body %}
+{% include 'components/sidebar.html' %}
+
+<div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
+  {% set page_title = 'Import Note' %}
+  {% set page_subtitle = 'Upload a Markdown or text file.' %}
+  {% set navbar_right_content %}
+    <a href="{{ url_for('notes.list_notes') }}"
+       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+              bg-white border border-gray-200 text-gray-500 rounded-lg
+              hover:bg-gray-50 hover:text-gray-700 transition">
+      Back
+    </a>
+  {% endset %}
+  {% include 'components/navbar.html' %}
+
+  <main class="flex-1">
+    <div class="max-w-screen-md mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 lg:py-8">
+      {% include 'components/flash_messages.html' %}
+
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <form method="post" enctype="multipart/form-data" class="p-4 sm:p-6 lg:p-8 space-y-5">
+          {{ form.hidden_tag() }}
+
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900">Import a note file</h2>
+            <p class="mt-1 text-xs text-gray-500">Supported formats: <strong>.md</strong> and <strong>.txt</strong>.</p>
+          </div>
+
+          <div>
+            <label for="note_file" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              File
+            </label>
+            <input id="note_file" name="note_file" type="file" accept=".md,.txt,text/plain,text/markdown"
+                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-3 file:rounded-lg
+                          file:border-0 file:text-xs file:font-medium file:bg-violet-50 file:text-violet-700
+                          hover:file:bg-violet-100 cursor-pointer border border-gray-200 rounded-lg p-2" />
+            {% for err in form.note_file.errors %}
+              <p class="mt-1.5 text-xs text-rose-500 flex items-center gap-1">
+                {{ info(cls='w-3.5 h-3.5 shrink-0') }}
+                {{ err }}
+              </p>
+            {% endfor %}
+          </div>
+
+          <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+            {{ info(cls='w-4 h-4 text-blue-500 mt-0.5 shrink-0') }}
+            <p class="text-xs text-blue-700 leading-relaxed">
+              The imported note title is generated from the first non-empty line of the file (or filename).
+            </p>
+          </div>
+
+          <div class="pt-1 flex items-center justify-end gap-2">
+            <a href="{{ url_for('notes.list_notes') }}"
+               class="inline-flex items-center px-3 py-1.5 text-xs font-medium
+                      bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                           bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+              {{ download(cls='w-3.5 h-3.5') }}
+              Import note
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

@@ -8,30 +8,25 @@
 
 <div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
   {% set page_title = 'Trash' %}
+  {% set page_subtitle = 'Deleted notes are permanently removed after 30 days.' %}
+  {% if notes %}
+    {% set navbar_right_content %}
+      <form method="POST" action="{{ url_for('notes.empty_trash') }}"
+            data-confirm="Empty Trash? All notes will be permanently deleted. This cannot be undone."
+            data-confirm-danger="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                       text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors">
+          {{ trash(cls='w-3.5 h-3.5') }}
+          Empty Trash
+        </button>
+      </form>
+    {% endset %}
+  {% endif %}
   {% include 'components/navbar.html' %}
 
   <main class="flex-1">
-
-    <!-- Sticky toolbar -->
-    <div class="sticky top-16 z-10 bg-white border-b border-gray-100
-                px-3 sm:px-5 lg:px-8 py-2.5 flex items-center justify-between gap-3">
-      <div class="min-w-0">
-        <h1 class="text-sm font-semibold text-gray-900">Trash</h1>
-      </div>
-      {% if notes %}
-        <form method="POST" action="{{ url_for('notes.empty_trash') }}"
-              data-confirm="Empty Trash? All notes will be permanently deleted. This cannot be undone."
-              data-confirm-danger="true">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                         text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors">
-            {{ trash(cls='w-3.5 h-3.5') }}
-            Empty Trash
-          </button>
-        </form>
-      {% endif %}
-    </div>
 
     <!-- Info strip -->
     <div class="bg-amber-50 border-b border-amber-100 px-3 sm:px-5 lg:px-8 py-2 flex items-center gap-2">

@@ -1,4 +1,4 @@
-{% from 'components/icons.html' import shield, document, plus, archive, trash, logout %}
+{% from 'components/icons.html' import shield, document, archive, trash, logout, settings %}
 <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200">
 
   <!-- Logo row -->
@@ -25,13 +25,6 @@
         <span class="sidebar-label">My Notes</span>
       </a>
 
-      <a href="{{ url_for('notes.create_note') }}" title="New Note"
-         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                {% if request.endpoint == 'notes.create_note' %}bg-violet-50 text-violet-700
-                {% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
-        {{ plus(cls='w-5 h-5 shrink-0') }}
-        <span class="sidebar-label">New Note</span>
-      </a>
 
       <a href="{{ url_for('notes.archive_list') }}" title="Archive"
          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -39,6 +32,14 @@
                 {% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
         {{ archive(cls='w-5 h-5 shrink-0') }}
         <span class="sidebar-label">Archive</span>
+      </a>
+
+      <a href="{{ url_for('notes.settings_page') }}" title="Settings"
+         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if request.endpoint == 'notes.settings_page' %}bg-violet-50 text-violet-700
+                {% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %}">
+        {{ settings(cls='w-5 h-5 shrink-0') }}
+        <span class="sidebar-label">Settings</span>
       </a>
 
       <a href="{{ url_for('notes.trash_list') }}" title="Trash"
