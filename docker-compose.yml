@@ -32,7 +32,6 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./app/static:/app/static:ro
     depends_on:
       - app
 
