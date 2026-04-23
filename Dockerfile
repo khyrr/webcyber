@@ -3,7 +3,8 @@ WORKDIR /build
 COPY tailwind.config.js tailwind.input.css ./
 COPY app/templates ./app/templates
 COPY app/static/js ./app/static/js
-RUN npx --yes tailwindcss -i tailwind.input.css -o tailwind.output.css --minify
+RUN npm install tailwindcss@3 && \
+    npx tailwindcss -i tailwind.input.css -o tailwind.output.css --minify
 
 FROM python:3.11-slim
 
