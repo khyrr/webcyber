@@ -71,6 +71,8 @@
     initSidebar();
     initNoteSearch();
     initWordCount();
+    initNavProgress();
+    initSmartDates();
   });
 
 })();
@@ -118,6 +120,84 @@ function initWordCount() {
     ta.addEventListener('input', update);
     update(); // populate count for pre-filled content on edit page
   });
+}
+
+/* ── Navigation progress bar ──────────────────────────── */
+function initNavProgress() {
+  var bar = document.getElementById('nav-progress');
+  if (!bar) return;
+
+  var timer;
+
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    /* Only trigger for same-origin, non-hash, non-download links */
+    if (!href || href.startsWith('#') || href.startsWith('javascript') ||
+        link.hasAttribute('download') || link.target === '_blank') return;
+    try {
+      var url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+    } catch (_) { return; }
+
+    bar.className = '';
+    bar.style.opacity = '1';
+    bar.classList.add('nav-running');
+
+    clearTimeout(timer);
+  });
+
+  window.addEventListener('pageshow', function () {
+    bar.classList.remove('nav-running');
+    bar.classList.add('nav-done');
+    timer = setTimeout(function () {
+      bar.className = '';
+      bar.style.width = '0%';
+      bar.style.opacity = '1';
+    }, 400);
+  });
+}
+
+/* ── Smart relative dates ────────────────────────────── */
+function smartDate(isoStr) {
+  var d   = new Date(isoStr);
+  var now = new Date();
+  var sec = Math.floor((now - d) / 1000);
+  var min = Math.floor(sec / 60);
+  var hr  = Math.floor(min / 60);
+  var day = Math.floor(hr  / 24);
+  if (sec < 60)  return 'Just now';
+  if (min < 60)  return min + (min === 1 ? ' min ago' : ' mins ago');
+  if (hr  < 24)  return hr  + (hr  === 1 ? ' hour ago' : ' hours ago');
+  if (day === 1) return 'Yesterday';
+  if (day < 30)  return day + ' days ago';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function smartDateFull(isoStr) {
+  var d = new Date(isoStr);
+  var date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var h = String(d.getHours()).padStart(2, '0');
+  var m = String(d.getMinutes()).padStart(2, '0');
+  return date + ' · ' + h + ':' + m;
+}
+
+function initSmartDates() {
+  function refresh() {
+    document.querySelectorAll('[data-ts]').forEach(function (el) {
+      if (el.dataset.tsFormat === 'full') {
+        el.textContent = smartDateFull(el.dataset.ts);
+      } else {
+        el.textContent = smartDate(el.dataset.ts);
+        if (!el.title) {
+          el.title = smartDateFull(el.dataset.ts);
+        }
+      }
+    });
+  }
+  refresh();
+  setInterval(refresh, 60000);
 }
 
 /* ── Confirm modal ────────────────────────────────────── */

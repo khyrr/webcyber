@@ -143,13 +143,13 @@
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-400">
               <span class="flex items-center gap-1.5">
                 {{ calendar(cls='w-3.5 h-3.5') }}
-                Created {{ note.created_at.strftime('%B %d, %Y') }}
+                Created <span data-ts="{{ note.created_at.isoformat() }}Z">{{ note.created_at.strftime('%B %d, %Y') }}</span>
               </span>
               {% if note.updated_at and note.updated_at != note.created_at %}
                 <span class="hidden sm:inline text-gray-200">·</span>
                 <span class="flex items-center gap-1.5">
                   {{ edit(cls='w-3.5 h-3.5') }}
-                  Edited {{ note.updated_at.strftime('%B %d, %Y at %H:%M') }}
+                  Edited <span data-ts="{{ note.updated_at.isoformat() }}Z">{{ note.updated_at.strftime('%B %d, %Y at %H:%M') }}</span>
                 </span>
               {% endif %}
               <span class="hidden sm:inline text-gray-200">·</span>
@@ -194,13 +194,15 @@
               <span class="flex items-center gap-1.5 text-gray-400">
                 {{ calendar(cls='w-3.5 h-3.5 shrink-0') }}
                 Created
-                <span class="font-medium text-gray-600">{{ note.created_at.strftime('%b %d, %Y') }}</span>
+                <span class="font-medium text-gray-600"
+                      data-ts="{{ note.created_at.isoformat() }}Z">{{ note.created_at.strftime('%b %d, %Y') }}</span>
               </span>
               {% if note.updated_at and note.updated_at != note.created_at %}
                 <span class="flex items-center gap-1.5 text-gray-400">
                   {{ edit(cls='w-3.5 h-3.5 shrink-0') }}
                   Edited
-                  <span class="font-medium text-gray-600">{{ note.updated_at.strftime('%b %d, %Y') }}</span>
+                  <span class="font-medium text-gray-600"
+                        data-ts="{{ note.updated_at.isoformat() }}Z">{{ note.updated_at.strftime('%b %d, %Y') }}</span>
                 </span>
               {% endif %}
             </div>
@@ -222,14 +224,16 @@
           <dl class="space-y-3 text-xs">
             <div>
               <dt class="text-gray-400 mb-0.5">Created</dt>
-              <dd class="font-medium text-gray-700">{{ note.created_at.strftime('%b %d, %Y') }}</dd>
-              <dd class="text-gray-400">{{ note.created_at.strftime('%H:%M') }}</dd>
+              <dd class="font-medium text-gray-700"
+                  data-ts="{{ note.created_at.isoformat() }}Z"
+                  data-ts-format="full">{{ note.created_at.strftime('%b %d, %Y') }}</dd>
             </div>
             <div>
               <dt class="text-gray-400 mb-0.5">Last edited</dt>
               {% if note.updated_at and note.updated_at != note.created_at %}
-                <dd class="font-medium text-gray-700">{{ note.updated_at.strftime('%b %d, %Y') }}</dd>
-                <dd class="text-gray-400">{{ note.updated_at.strftime('%H:%M') }}</dd>
+                <dd class="font-medium text-gray-700"
+                    data-ts="{{ note.updated_at.isoformat() }}Z"
+                    data-ts-format="full">{{ note.updated_at.strftime('%b %d, %Y') }}</dd>
               {% else %}
                 <dd class="text-gray-400 italic">Never edited</dd>
               {% endif %}

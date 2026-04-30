@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from 'components/icons.html' import check, info %}
+{% from 'components/icons.html' import check, info, dots_horizontal, download, close %}
 
 {% block title %}New Note — WebCyber{% endblock %}
 
@@ -92,20 +92,18 @@
   .editor-preview th { background: #f9fafb; font-weight: 600; padding: 0.5em 0.75em; border: 1px solid #e5e7eb; }
   .editor-preview td { padding: 0.5em 0.75em; border: 1px solid #e5e7eb; }
   .editor-preview-side { border-left: 1px solid #e5e7eb; }
-  /* Word count status bar */
   .editor-statusbar { border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;
     background: #f9fafb; padding: 3px 12px; font-size: 0.7rem; color: #9ca3af; }
-  /* ── Fullscreen / side-by-side: contained inside sidebar + navbar ── */
   .editor-toolbar.fullscreen {
     position: fixed !important;
-    top: 64px !important;          /* navbar height (h-16) */
+    top: 64px !important;
     left: var(--sb-w) !important;
     right: 0 !important;
     width: auto !important;
     z-index: 20 !important;
   }
   .CodeMirror-fullscreen {
-    position: fixed !important;    /* top set dynamically by JS */
+    position: fixed !important;
     left: var(--sb-w) !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -113,7 +111,7 @@
     z-index: 20 !important;
   }
   .editor-preview-active-side {
-    position: fixed !important;    /* top set dynamically by JS */
+    position: fixed !important;
     left: calc(50vw + var(--sb-w) / 2) !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -147,8 +145,24 @@
 
 <div id="main-area" class="flex flex-col min-h-screen bg-gray-50">
   {% set page_title = 'New Note' %}
-  {% set page_subtitle = 'Start a new note from scratch.' %}
   {% set navbar_right_content %}
+    <!-- Three-dots menu -->
+    <div class="relative" id="create-actions-wrap">
+      <button type="button" id="create-actions-btn"
+              class="inline-flex items-center justify-center w-8 h-8 text-gray-400
+                     hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+        {{ dots_horizontal(cls='w-4 h-4') }}
+      </button>
+      <div id="create-actions-menu"
+           class="hidden absolute right-0 mt-1 w-44 bg-white border border-gray-200
+                  rounded-xl shadow-lg py-1 z-20 text-xs font-medium">
+        <button type="button" data-open-import-modal
+                class="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-600 hover:bg-gray-50 transition">
+          {{ download(cls='w-3.5 h-3.5 text-gray-400') }}
+          Import note
+        </button>
+      </div>
+    </div>
     <a href="{{ url_for('notes.list_notes') }}"
        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
               bg-white border border-gray-200 text-gray-500 rounded-lg
@@ -165,8 +179,6 @@
   {% include 'components/navbar.html' %}
 
   <main class="flex-1">
-
-    <!-- Content row -->
     <div class="flex gap-0 max-w-screen-xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 lg:py-8">
 
       <!-- Main form -->
@@ -212,19 +224,38 @@
             </div>
 
             <!-- Mobile / tablet bottom actions -->
-            <div class="xl:hidden px-4 sm:px-6 py-3 flex items-center justify-end gap-2 bg-gray-50/60">
-              <a href="{{ url_for('notes.list_notes') }}"
-                 class="inline-flex items-center px-3 py-1.5 text-xs font-medium
-                        bg-white border border-gray-200 text-gray-500 rounded-lg
-                        hover:bg-gray-50 transition">
-                Cancel
-              </a>
-              <button type="submit"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                             bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
-                {{ check(cls='w-3.5 h-3.5') }}
-                Save note
-              </button>
+            <div class="xl:hidden px-4 sm:px-6 py-3 flex items-center justify-between gap-2 bg-gray-50/60">
+              <!-- Three-dots menu (mobile) -->
+              <div class="relative" id="create-actions-wrap-mobile">
+                <button type="button" id="create-actions-btn-mobile"
+                        class="inline-flex items-center justify-center w-8 h-8 text-gray-400
+                               hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                  {{ dots_horizontal(cls='w-4 h-4') }}
+                </button>
+                <div id="create-actions-menu-mobile"
+                     class="hidden absolute left-0 bottom-10 w-44 bg-white border border-gray-200
+                            rounded-xl shadow-lg py-1 z-20 text-xs font-medium">
+                  <button type="button" data-open-import-modal
+                          class="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-600 hover:bg-gray-50 transition">
+                    {{ download(cls='w-3.5 h-3.5 text-gray-400') }}
+                    Import note
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <a href="{{ url_for('notes.list_notes') }}"
+                   class="inline-flex items-center px-3 py-1.5 text-xs font-medium
+                          bg-white border border-gray-200 text-gray-500 rounded-lg
+                          hover:bg-gray-50 transition">
+                  Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                               bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+                  {{ check(cls='w-3.5 h-3.5') }}
+                  Save note
+                </button>
+              </div>
             </div>
 
           </form>
@@ -234,63 +265,92 @@
       <!-- Right tips panel (xl only) -->
       <aside class="hidden xl:flex flex-col gap-4 w-60 shrink-0 ml-6">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sticky top-32">
-
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Markdown syntax
-          </p>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Markdown syntax</p>
           <dl class="space-y-2 text-xs text-gray-500">
             {% set tips = [
-              ('# Heading 1',   'H1'),
-              ('## Heading 2',  'H2'),
-              ('**bold**',      'Bold'),
-              ('*italic*',      'Italic'),
-              ('`code`',        'Inline code'),
-              ('> quote',       'Blockquote'),
-              ('- item',        'Bullet list'),
-              ('1. item',       'Ordered list'),
-              ('- [x] task',    'Task list'),
-              ('[text](url)',   'Link'),
+              ('# Heading 1',  'H1'),
+              ('## Heading 2', 'H2'),
+              ('**bold**',     'Bold'),
+              ('*italic*',     'Italic'),
+              ('`code`',       'Inline code'),
+              ('> quote',      'Blockquote'),
+              ('- item',       'Bullet list'),
+              ('1. item',      'Ordered list'),
+              ('- [x] task',   'Task list'),
+              ('[text](url)',  'Link'),
             ] %}
             {% for syntax, label in tips %}
               <div class="flex items-center justify-between gap-2">
-                <code class="font-mono text-2xs bg-gray-100 text-violet-700
-                             px-1.5 py-0.5 rounded shrink-0">{{ syntax }}</code>
+                <code class="font-mono text-2xs bg-gray-100 text-violet-700 px-1.5 py-0.5 rounded shrink-0">{{ syntax }}</code>
                 <span class="text-gray-400 text-right leading-tight">{{ label }}</span>
               </div>
             {% endfor %}
           </dl>
-
-          <div class="border-t border-gray-100 mt-4 pt-4">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Shortcuts
-            </p>
-            <dl class="space-y-2 text-xs">
-              {% set shortcuts = [
-                ('Ctrl B',     'Bold'),
-                ('Ctrl I',     'Italic'),
-                ('Ctrl K',     'Link'),
-                ('Ctrl P',     'Preview'),
-              ] %}
-              {% for keys, label in shortcuts %}
-                <div class="flex items-center justify-between gap-2">
-                  <span class="flex items-center gap-1">
-                    {% for k in keys.split(' ') %}
-                      <kbd class="font-mono text-2xs bg-gray-100 text-gray-600
-                                  px-1.5 py-0.5 rounded border border-gray-200
-                                  shadow-[0_1px_0_#d1d5db]">{{ k }}</kbd>
-                    {% endfor %}
-                  </span>
-                  <span class="text-gray-400">{{ label }}</span>
-                </div>
-              {% endfor %}
-            </dl>
-          </div>
-
         </div>
       </aside>
 
     </div>
   </main>
+</div>
+
+<!-- Import modal -->
+<div id="import-modal"
+     class="{% if open_import_modal %}flex {% else %}hidden {% endif %}fixed inset-0 z-50 items-center justify-center px-4">
+  <div id="import-modal-backdrop"
+       class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div>
+        <p class="text-sm font-semibold text-gray-900">Import Note</p>
+        <p class="mt-0.5 text-xs text-gray-500">Upload a Markdown or text file and continue editing it.</p>
+      </div>
+      <button type="button" data-close-import-modal
+              class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400
+                     hover:text-gray-600 hover:bg-gray-100 transition"
+              aria-label="Close">
+        {{ close(cls='w-4 h-4') }}
+      </button>
+    </div>
+
+    <form method="post" action="{{ url_for('notes.import_note') }}" enctype="multipart/form-data" class="p-5 space-y-5">
+      {{ import_form.hidden_tag() }}
+      <div>
+        <label for="note_file" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">File</label>
+        <input id="note_file" name="note_file" type="file" accept=".md,.txt,text/plain,text/markdown"
+               class="block w-full text-sm text-gray-700
+                      file:mr-4 file:py-2 file:px-3 file:rounded-lg
+                      file:border-0 file:text-xs file:font-medium file:bg-violet-50 file:text-violet-700
+                      hover:file:bg-violet-100 cursor-pointer border border-gray-200 rounded-lg p-2" />
+        {% for err in import_form.note_file.errors %}
+          <p class="mt-1.5 text-xs text-rose-500 flex items-center gap-1">
+            {{ info(cls='w-3.5 h-3.5 shrink-0') }}
+            {{ err }}
+          </p>
+        {% endfor %}
+      </div>
+
+      <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+        {{ info(cls='w-4 h-4 text-blue-500 mt-0.5 shrink-0') }}
+        <p class="text-xs text-blue-700 leading-relaxed">
+          The note title is generated from the first non-empty line of the file or from the filename.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" data-close-import-modal
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium
+                       bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                       bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+          {{ download(cls='w-3.5 h-3.5') }}
+          Import Note
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
@@ -314,54 +374,42 @@
     renderingConfig: { singleLineBreaks: false },
   });
 
-  // Dynamically set top of editor / preview so they sit just below the toolbar
   function syncFullscreenTop() {
     var tb = document.querySelector('.editor-toolbar.fullscreen');
     if (!tb) return;
-    var top = 64 + tb.offsetHeight; // 64px navbar + actual toolbar height
-    var cm = document.querySelector('.CodeMirror-fullscreen');
+    var top = 64 + tb.offsetHeight;
+    var cm  = document.querySelector('.CodeMirror-fullscreen');
     var pre = document.querySelector('.editor-preview-active-side');
     if (cm)  cm.style.top  = top + 'px';
     if (pre) pre.style.top = top + 'px';
   }
-
-  // Watch CodeMirror wrapper for class changes (fullscreen toggle)
   new MutationObserver(function() { setTimeout(syncFullscreenTop, 0); })
     .observe(easyMDE.codemirror.getWrapperElement(), { attributes: true, attributeFilter: ['class'] });
-  // Watch toolbar for class changes (side-by-side toggle)
   new MutationObserver(function() { setTimeout(syncFullscreenTop, 0); })
     .observe(document.querySelector('.editor-toolbar'), { attributes: true, attributeFilter: ['class'] });
 
-  // ── Auto-title logic ───────────────────────────────────────
-  var titleEl  = document.getElementById('title');
+  // ── Auto-title ────────────────────────────────────────────────
+  var titleEl   = document.getElementById('title');
   var AUTO_TITLE = 'Untitled';
-  var titleManual = false;  // true once user explicitly edits the title
+  var titleManual = false;
 
-  // Seed default only on a fresh form (no server-side value coming back)
   if (!titleEl.value.trim()) {
     titleEl.value = AUTO_TITLE;
     titleEl.dataset.auto = 'true';
   }
 
-  // Clicking/focusing the title = manual mode; select-all if still default
   titleEl.addEventListener('focus', function () {
-    if (titleEl.dataset.auto === 'true') {
-      titleEl.select();
-    }
+    if (titleEl.dataset.auto === 'true') titleEl.select();
   });
-
   titleEl.addEventListener('input', function () {
     titleManual = true;
     titleEl.dataset.auto = 'false';
-    // If user clears it out, revert to default
     if (!titleEl.value.trim()) {
       titleEl.value = AUTO_TITLE;
       titleEl.dataset.auto = 'true';
       titleManual = false;
     }
   });
-
-  // When user blurs to nothing, restore default
   titleEl.addEventListener('blur', function () {
     if (!titleEl.value.trim()) {
       titleEl.value = AUTO_TITLE;
@@ -370,32 +418,69 @@
     }
   });
 
-  // Derive title from the first meaningful line of content
   function deriveTitleFromContent(raw) {
     var lines = raw.split('\n');
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line) continue;
-      // Strip leading markdown heading markers (# ## ###…)
-      line = line.replace(/^#{1,6}\s+/, '');
-      // Strip bold/italic markers
-      line = line.replace(/[*_`]/g, '');
-      // Truncate to 60 chars
+      line = line.replace(/^#{1,6}\s+/, '').replace(/[*_`]/g, '');
       return line.length > 60 ? line.slice(0, 60).trimEnd() + '…' : line;
     }
     return '';
   }
-
   easyMDE.codemirror.on('change', function () {
-    if (titleManual) return;  // user already set a custom title
+    if (titleManual) return;
     var derived = deriveTitleFromContent(easyMDE.value());
-    if (derived) {
-      titleEl.value = derived;
-      titleEl.dataset.auto = 'false';  // derived, but still auto-managed
-    } else {
-      titleEl.value = AUTO_TITLE;
-      titleEl.dataset.auto = 'true';
-    }
+    titleEl.value = derived || AUTO_TITLE;
+    titleEl.dataset.auto = derived ? 'false' : 'true';
   });
+
+  // ── Three-dots menus ──────────────────────────────────────────
+  function initActionsMenu(btnId, menuId) {
+    var btn  = document.getElementById(btnId);
+    var menu = document.getElementById(menuId);
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      menu.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function () {
+      menu.classList.add('hidden');
+    });
+  }
+  initActionsMenu('create-actions-btn', 'create-actions-menu');
+  initActionsMenu('create-actions-btn-mobile', 'create-actions-menu-mobile');
+
+  // ── Import modal ──────────────────────────────────────────────
+  (function () {
+    var modal    = document.getElementById('import-modal');
+    var backdrop = document.getElementById('import-modal-backdrop');
+    var fileInput = document.getElementById('note_file');
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (fileInput) fileInput.focus();
+    }
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.querySelectorAll('[data-open-import-modal]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        document.querySelectorAll('.actions-menu, #create-actions-menu, #create-actions-menu-mobile')
+          .forEach(function (m) { m.classList.add('hidden'); });
+        openModal();
+      });
+    });
+    document.querySelectorAll('[data-close-import-modal]').forEach(function (el) {
+      el.addEventListener('click', closeModal);
+    });
+    if (backdrop) backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+  })();
 </script>
 {% endblock %}

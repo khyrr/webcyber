@@ -65,9 +65,8 @@
                     Deletes in {{ days_left }} day{{ 's' if days_left != 1 else '' }}
                   </span>
                 {% else %}
-                  <span class="text-2xs text-gray-400">
-                    Deleted {{ days_trashed }} day{{ 's' if days_trashed != 1 else '' }} ago
-                  </span>
+                  <span class="text-2xs text-gray-400"
+                        data-ts="{{ note.trashed_at.isoformat() }}Z">Deleted {{ days_trashed }} day{{ 's' if days_trashed != 1 else '' }} ago</span>
                 {% endif %}
               </div>
 

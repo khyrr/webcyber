@@ -1,0 +1,220 @@
+{% from 'components/icons.html' import search, plus, document, archive, trash, settings, logout, download %}
+<!-- Command Palette — opens on Ctrl/Cmd+K -->
+<div id="cmd-palette" class="hidden fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
+     role="dialog" aria-modal="true" aria-label="Command palette">
+
+  <!-- Backdrop -->
+  <div id="cmd-backdrop" class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-150"></div>
+
+  <!-- Panel -->
+  <div id="cmd-panel"
+       class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-200
+              overflow-hidden scale-95 opacity-0 transition-all duration-150">
+
+    <!-- Search input -->
+    <div class="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+      {{ search(cls='w-4 h-4 text-gray-400 shrink-0') }}
+      <input id="cmd-input" type="text" placeholder="Search notes or jump to…"
+             autocomplete="off" spellcheck="false"
+             class="flex-1 text-sm text-gray-900 placeholder-gray-400 bg-transparent
+                    outline-none focus:outline-none caret-violet-600"
+             aria-autocomplete="list" aria-controls="cmd-results">
+      <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-2xs font-medium
+                  text-gray-400 bg-gray-100 border border-gray-200 rounded">Esc</kbd>
+    </div>
+
+    <!-- Results list -->
+    <ul id="cmd-results" role="listbox" class="max-h-72 overflow-y-auto py-2">
+      <!-- Populated by JS -->
+    </ul>
+
+    <!-- Footer hint -->
+    <div class="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 bg-gray-50/80">
+      <span class="flex items-center gap-1.5 text-2xs text-gray-400">
+        <kbd class="inline-flex items-center px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono text-2xs">↑↓</kbd>
+        navigate
+      </span>
+      <span class="flex items-center gap-1.5 text-2xs text-gray-400">
+        <kbd class="inline-flex items-center px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono text-2xs">↵</kbd>
+        open
+      </span>
+      <span class="flex items-center gap-1.5 text-2xs text-gray-400">
+        <kbd class="inline-flex items-center px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono text-2xs">Esc</kbd>
+        close
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var palette   = document.getElementById('cmd-palette');
+  var backdrop  = document.getElementById('cmd-backdrop');
+  var panel     = document.getElementById('cmd-panel');
+  var input     = document.getElementById('cmd-input');
+  var results   = document.getElementById('cmd-results');
+  var activeIdx = -1;
+
+  /* ── Static quick-action commands ─────────────────────── */
+  var COMMANDS = [
+    { label: 'New Note',     icon: 'plus',     href: '{{ url_for("notes.create_note") }}',           group: 'Actions' },
+    { label: 'Import Note',  icon: 'download', href: '{{ url_for("notes.create_note", import=1) }}', group: 'Actions' },
+    { label: 'My Notes',     icon: 'document', href: '{{ url_for("notes.list_notes") }}',            group: 'Navigate' },
+    { label: 'Archive',      icon: 'archive',  href: '{{ url_for("notes.archive_list") }}',          group: 'Navigate' },
+    { label: 'Trash',        icon: 'trash',    href: '{{ url_for("notes.trash_list") }}',            group: 'Navigate' },
+    { label: 'Settings',     icon: 'settings', href: '{{ url_for("notes.settings_page") }}',         group: 'Navigate' },
+    { label: 'Log out',      icon: 'logout',   href: '{{ url_for("auth.logout") }}',                 group: 'Account'  },
+  ];
+
+  var ICONS = {
+    plus:     '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    download: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0l-4-4m4 4l4-4M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/></svg>',
+    document: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    archive:  '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M5 8a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v0a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>',
+    trash:    '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>',
+    settings: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 .99-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51.99H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    logout:   '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>',
+    note:     '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+  };
+
+  /* ── Collect note titles from the DOM (list page only) ── */
+  function getNotes() {
+    var items = [];
+    document.querySelectorAll('[data-note-card]').forEach(function (card) {
+      var link = card.querySelector('a[href]');
+      if (!link) return;
+      items.push({
+        label: card.dataset.title
+                 ? card.dataset.title.charAt(0).toUpperCase() + card.dataset.title.slice(1)
+                 : 'Untitled',
+        icon:  'note',
+        href:  link.getAttribute('href'),
+        group: 'Notes',
+      });
+    });
+    return items;
+  }
+
+  /* ── Render results ─────────────────────────────────────── */
+  function renderResults(q) {
+    var query    = (q || '').toLowerCase().trim();
+    var noteItems = getNotes();
+    var all      = noteItems.concat(COMMANDS);
+    var filtered = query
+      ? all.filter(function (it) { return it.label.toLowerCase().includes(query); })
+      : all;
+
+    if (!filtered.length) {
+      results.innerHTML = '<li class="px-4 py-8 text-center text-sm text-gray-400">No results</li>';
+      activeIdx = -1;
+      return;
+    }
+
+    /* Group items */
+    var groups = {};
+    filtered.forEach(function (it) {
+      if (!groups[it.group]) groups[it.group] = [];
+      groups[it.group].push(it);
+    });
+
+    var html = '';
+    var idx  = 0;
+    Object.keys(groups).forEach(function (g) {
+      html += '<li class="px-3 pt-2 pb-1"><p class="text-2xs font-semibold text-gray-400 uppercase tracking-wider">' + g + '</p></li>';
+      groups[g].forEach(function (it) {
+        html += '<li role="option" aria-selected="false" data-idx="' + idx + '" data-href="' + it.href + '"' +
+                ' class="cmd-item flex items-center gap-3 mx-1.5 px-3 py-2.5 rounded-lg cursor-pointer' +
+                ' text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-800 transition-colors">' +
+                '<span class="shrink-0 text-gray-400">' + (ICONS[it.icon] || ICONS.note) + '</span>' +
+                '<span class="flex-1 truncate">' + it.label + '</span>' +
+                '</li>';
+        idx++;
+      });
+    });
+
+    results.innerHTML = html;
+    activeIdx = -1;
+
+    results.querySelectorAll('.cmd-item').forEach(function (el) {
+      el.addEventListener('mouseenter', function () { setActive(parseInt(el.dataset.idx)); });
+      el.addEventListener('click',      function () { navigate(el.dataset.href); });
+    });
+  }
+
+  function setActive(idx) {
+    var items = results.querySelectorAll('.cmd-item');
+    items.forEach(function (el, i) {
+      if (i === idx) {
+        el.classList.add('bg-violet-50', 'text-violet-800');
+        el.setAttribute('aria-selected', 'true');
+        el.scrollIntoView({ block: 'nearest' });
+      } else {
+        el.classList.remove('bg-violet-50', 'text-violet-800');
+        el.setAttribute('aria-selected', 'false');
+      }
+    });
+    activeIdx = idx;
+  }
+
+  function navigate(href) {
+    if (href) window.location.href = href;
+    closePalette();
+  }
+
+  /* ── Open / close ───────────────────────────────────────── */
+  function openPalette() {
+    palette.classList.remove('hidden');
+    palette.classList.add('flex');
+    requestAnimationFrame(function () {
+      backdrop.classList.add('opacity-100');
+      panel.classList.remove('scale-95', 'opacity-0');
+      panel.classList.add('scale-100', 'opacity-100');
+    });
+    input.value = '';
+    renderResults('');
+    input.focus();
+  }
+
+  function closePalette() {
+    backdrop.classList.remove('opacity-100');
+    panel.classList.remove('scale-100', 'opacity-100');
+    panel.classList.add('scale-95', 'opacity-0');
+    setTimeout(function () {
+      palette.classList.add('hidden');
+      palette.classList.remove('flex');
+    }, 150);
+  }
+
+  /* ── Event listeners ────────────────────────────────────── */
+  document.addEventListener('keydown', function (e) {
+    /* Open on Ctrl/Cmd+K */
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      if (palette.classList.contains('hidden')) openPalette();
+      else closePalette();
+      return;
+    }
+
+    if (palette.classList.contains('hidden')) return;
+
+    var items = results.querySelectorAll('.cmd-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(Math.min(activeIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive(Math.max(activeIdx - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      var active = items[activeIdx];
+      if (active) navigate(active.dataset.href);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closePalette();
+    }
+  });
+
+  input.addEventListener('input', function () { renderResults(this.value); activeIdx = -1; });
+  backdrop.addEventListener('click', closePalette);
+})();
+</script>

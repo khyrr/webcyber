@@ -1,87 +1,44 @@
 {% extends 'base.html' %}
-{% from 'components/icons.html' import shield, check %}
+{% from 'components/icons.html' import shield %}
 {% from 'components/form_input.html' import render %}
 {% from 'components/button.html' import btn_primary %}
 
 {% block title %}Sign In — WebCyber{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex">
-
-  <!-- Left brand panel -->
-  <div class="hidden lg:flex lg:w-5/12 bg-violet-600 flex-col justify-between p-12 relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-br from-violet-500 via-violet-600 to-violet-800"></div>
-    <div class="absolute inset-0 opacity-[0.07]"
-         style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0);
-                background-size: 28px 28px;"></div>
+<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+  <div class="w-full max-w-sm">
 
     <!-- Logo -->
-    <div class="relative z-10 flex items-center gap-3">
-      <div class="flex items-center justify-center w-9 h-9 bg-white/20 rounded-xl backdrop-blur-sm">
+    <div class="flex flex-col items-center mb-8">
+      <div class="flex items-center justify-center w-10 h-10 bg-violet-600 rounded-xl mb-4">
         {{ shield(cls='w-5 h-5 text-white') }}
       </div>
-      <span class="text-white font-semibold text-lg font-display">WebCyber</span>
+      <h1 class="text-xl font-semibold text-gray-900 tracking-tight">WebCyber</h1>
     </div>
 
-    <!-- Copy -->
-    <div class="relative z-10">
-      <h1 class="text-3xl font-bold text-white leading-snug mb-3">
-        Your thoughts deserve<br>enterprise-grade security.
-      </h1>
-      <p class="text-violet-200 text-sm leading-relaxed">
-        End-to-end secured, private-by-design note taking.
-      </p>
-
-      <!-- Feature pills -->
-      <div class="mt-8 flex flex-wrap gap-2">
-        {% for feat in ['Private by default', 'Markdown support', 'Pinned & archived notes', '30-day trash recovery'] %}
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full text-xs text-violet-100">
-            {{ check(cls='w-3 h-3 text-violet-300') }}
-            {{ feat }}
-          </span>
-        {% endfor %}
-      </div>
-    </div>
-
-    <p class="relative z-10 text-xs text-violet-400">Secure &middot; Private &middot; Yours alone</p>
-  </div>
-
-  <!-- Right: form -->
-  <div class="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
-    <div class="w-full max-w-sm">
-
-      <!-- Mobile logo -->
-      <div class="lg:hidden flex items-center gap-2 mb-8">
-        <div class="flex items-center justify-center w-8 h-8 bg-violet-600 rounded-lg">
-          {{ shield(cls='w-4 h-4 text-white') }}
-        </div>
-        <span class="font-semibold text-gray-900">WebCyber</span>
-      </div>
-
-      <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Welcome back</h2>
-        <p class="text-gray-500 text-sm mt-1">Sign in to your secure workspace</p>
-      </div>
+    <!-- Card -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm px-8 py-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6">Sign in to your account</h2>
 
       {% include 'components/flash_messages.html' %}
 
-      <form method="post" class="space-y-5">
+      <form method="post" class="space-y-4">
         {{ form.hidden_tag() }}
         {{ render(form.username, 'Username', placeholder='your_username', autocomplete='username') }}
         {{ render(form.password, 'Password', type='password', placeholder='••••••••', autocomplete='current-password') }}
-        <div class="pt-1">
+        <div class="pt-2">
           {{ btn_primary('Sign in', show_icon=false, extra='w-full') }}
         </div>
       </form>
-
-      <p class="mt-6 text-center text-sm text-gray-500">
-        Don’t have an account?
-        <a href="{{ url_for('auth.register') }}"
-           class="font-medium text-violet-600 hover:text-violet-700 transition">Create one</a>
-      </p>
     </div>
+
+    <p class="mt-5 text-center text-sm text-gray-500">
+      Don't have an account?
+      <a href="{{ url_for('auth.register') }}"
+         class="font-medium text-violet-600 hover:text-violet-700 transition">Create one</a>
+    </p>
+
   </div>
 </div>
 {% endblock %}
-
- 

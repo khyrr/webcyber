@@ -53,12 +53,7 @@ def list_notes():
 @notes_bp.route("/new")
 @login_required
 def new_note():
-    open_import_modal = request.args.get("import") in {"1", "true", "yes"}
-    return render_template(
-        "notes/new.html",
-        import_form=NoteImportForm(),
-        open_import_modal=open_import_modal,
-    )
+    return redirect(url_for("notes.create_note", **request.args))
 
 
 @notes_bp.route("/settings")
@@ -83,7 +78,13 @@ def create_note():
         flash("Note created successfully.", "success")
         return redirect(url_for("notes.list_notes"))
 
-    return render_template("notes/create.html", form=form)
+    open_import_modal = request.args.get("import") in {"1", "true", "yes"}
+    return render_template(
+        "notes/create.html",
+        form=form,
+        import_form=NoteImportForm(),
+        open_import_modal=open_import_modal,
+    )
 
 
 @notes_bp.route("/import", methods=["GET", "POST"])
@@ -151,6 +152,22 @@ def view_note(id):
         abort(404)
 
     return render_template("notes/view.html", note=note)
+
+
+@notes_bp.route("/<int:id>/autosave", methods=["PATCH"])
+@login_required
+def autosave_note(id):
+    note = Note.query.get_or_404(id)
+    if note.user_id != current_user.id:
+        abort(403)
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    if title:
+        note.title = title[:200]
+    note.content = data.get("content", note.content)
+    note.updated_at = datetime.utcnow()
+    db.session.commit()
+    return {"saved_at": note.updated_at.isoformat()}
 
 
 @notes_bp.route("/<int:id>/edit", methods=["GET", "POST"])

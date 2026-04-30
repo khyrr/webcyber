@@ -41,7 +41,7 @@
               <!-- Footer -->
               <div class="border-t border-gray-100 px-5 py-3 flex items-center justify-between gap-2">
                 <span class="text-2xs text-gray-400">
-                  Archived {{ note.archived_at.strftime('%b %d, %Y') if note.archived_at else '' }}
+                  Archived {% if note.archived_at %}<span data-ts="{{ note.archived_at.isoformat() }}Z">{{ note.archived_at.strftime('%b %d, %Y') }}</span>{% endif %}
                 </span>
 
                 <div class="flex items-center gap-1.5 shrink-0">

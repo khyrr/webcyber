@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{% block title %}WebCyber Secure Notes{% endblock %}</title>
     <link
       rel="stylesheet"
@@ -21,6 +22,8 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body class="h-full bg-gray-50 text-gray-900 antialiased">
+    <!-- Navigation progress bar -->
+    <div id="nav-progress"></div>
     <!-- Sidebar state: applied synchronously before first paint to prevent flash -->
     <script>
       (function () {
@@ -42,6 +45,8 @@
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
     <!-- Global confirmation modal -->
     {% include 'components/confirm_modal.html' %}
+    <!-- Command palette (Ctrl/Cmd+K) -->
+    {% include 'components/command_palette.html' %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

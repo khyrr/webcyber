@@ -1,4 +1,15 @@
 todo/
+node_modules/
+
+### Terraform ###
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/*.pem
+terraform/crash.log
+terraform/crash.*.log
+terraform/.terraform.tfstate.lock.info
 
 ### Flask ###
 instance/*
@@ -158,3 +169,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+report/
+
+instance.txt

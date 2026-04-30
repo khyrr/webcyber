@@ -12,7 +12,9 @@
         class="inline-flex items-center justify-center gap-2 px-5 py-2.5
                bg-violet-600 hover:bg-violet-700 active:bg-violet-800
                text-white text-sm font-semibold rounded-lg
-               transition duration-150 shadow-sm {{ extra }}">
+               transition duration-150 shadow-sm
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2
+               {{ extra }}">
   {% if show_icon %}
   {{ check(cls='w-4 h-4 shrink-0') }}
   {% endif %}
@@ -24,7 +26,9 @@
 <a href="{{ href }}"
    class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium
           text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200
-          rounded-lg transition duration-150 {{ extra }}">
+          rounded-lg transition duration-150
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1
+          {{ extra }}">
   {{ label }}
 </a>
 {% endmacro %}
@@ -37,7 +41,9 @@
   <button type="submit"
           class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium
                  text-rose-600 hover:bg-rose-50 border border-rose-200
-                 rounded-lg transition duration-150 {{ extra }}">
+                 rounded-lg transition duration-150
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1
+                 {{ extra }}">
     {{ trash(cls='w-4 h-4 shrink-0') }}
     {{ label }}
   </button>
@@ -61,7 +67,9 @@
         class="inline-flex items-center justify-center w-8 h-8 text-gray-400
                border border-gray-200 hover:border-gray-300
                hover:bg-gray-50 hover:text-gray-600
-               rounded-lg transition duration-150 {{ extra }}">
+               rounded-lg transition duration-150
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1
+               {{ extra }}">
   {{ icon_html }}
 </button>
 {% endmacro %}

@@ -148,18 +148,14 @@
   {% set page_title = 'Edit Note' %}
   {% set page_subtitle = note.title %}
   {% set navbar_right_content %}
+    <span data-autosave-status
+          class="text-xs text-gray-400 tabular-nums">All changes saved</span>
     <a href="{{ url_for('notes.view_note', id=note.id) }}"
        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
               bg-white border border-gray-200 text-gray-500 rounded-lg
               hover:bg-gray-50 hover:text-gray-700 transition">
-      Cancel
+      Done
     </a>
-    <button type="submit" form="edit-form"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                   bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
-      {{ check(cls='w-3.5 h-3.5') }}
-      Save changes
-    </button>
   {% endset %}
   {% include 'components/navbar.html' %}
 
@@ -173,7 +169,7 @@
         {% include 'components/flash_messages.html' %}
 
         <div class="bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <form id="edit-form" method="post" class="divide-y divide-gray-100">
+          <form id="edit-form" method="post" data-note-id="{{ note.id }}" class="divide-y divide-gray-100">
             {{ form.hidden_tag() }}
 
             <!-- Title -->
@@ -224,20 +220,15 @@
                   Trash
                 </button>
               </form>
-              <!-- Save / cancel -->
-              <div class="flex items-center gap-2">
+              <!-- Status + Done -->
+              <div class="flex items-center gap-3">
+                <span data-autosave-status
+                      class="text-xs text-gray-400 tabular-nums">All changes saved</span>
                 <a href="{{ url_for('notes.view_note', id=note.id) }}"
                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium
-                          bg-white border border-gray-200 text-gray-500 rounded-lg
-                          hover:bg-gray-50 transition">
-                  Cancel
+                          bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
+                  Done
                 </a>
-                <button type="submit"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                               bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-sm">
-                  {{ check(cls='w-3.5 h-3.5') }}
-                  Save
-                </button>
               </div>
             </div>
 
@@ -254,13 +245,16 @@
           <dl class="space-y-3 text-xs mb-4">
             <div>
               <dt class="text-gray-400 mb-0.5">Created</dt>
-              <dd class="font-medium text-gray-700">{{ note.created_at.strftime('%b %d, %Y') }}</dd>
+              <dd class="font-medium text-gray-700"
+                  data-ts="{{ note.created_at.isoformat() }}Z"
+                  data-ts-format="full">{{ note.created_at.strftime('%b %d, %Y') }}</dd>
             </div>
             <div>
               <dt class="text-gray-400 mb-0.5">Last saved</dt>
               {% if note.updated_at and note.updated_at != note.created_at %}
-                <dd class="font-medium text-gray-700">{{ note.updated_at.strftime('%b %d, %Y') }}</dd>
-                <dd class="text-gray-400">{{ note.updated_at.strftime('%H:%M') }}</dd>
+                <dd class="font-medium text-gray-700"
+                    data-ts="{{ note.updated_at.isoformat() }}Z"
+                    data-ts-format="full">{{ note.updated_at.strftime('%b %d, %Y') }}</dd>
               {% else %}
                 <dd class="text-gray-400 italic">Never edited</dd>
               {% endif %}
@@ -326,23 +320,65 @@
   new MutationObserver(function() { setTimeout(syncFullscreenTop, 0); })
     .observe(document.querySelector('.editor-toolbar'), { attributes: true, attributeFilter: ['class'] });
 
-  // ── Unsaved-changes guard ────────────────────────────────────
-  var dirty = false;
-  var originalTitle   = document.getElementById('title').value;
-  var originalContent = easyMDE.value();
+  // ── Autosave ────────────────────────────────────────────────
+  var noteId   = document.getElementById('edit-form').dataset.noteId;
+  var titleEl  = document.getElementById('title');
+  var csrf     = document.querySelector('meta[name="csrf-token"]').content;
+  var saveTimer;
+  var saving   = false;
 
-  document.getElementById('title').addEventListener('input', function () {
-    dirty = this.value !== originalTitle;
+  function setStatus(text, color) {
+    document.querySelectorAll('[data-autosave-status]').forEach(function (el) {
+      el.textContent = text;
+      el.className = 'text-xs tabular-nums ' + color;
+    });
+  }
+
+  function save() {
+    saving = true;
+    setStatus('Saving…', 'text-gray-400');
+    fetch('/notes/' + noteId + '/autosave', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+      body: JSON.stringify({ title: titleEl.value, content: easyMDE.value() })
+    })
+    .then(function (r) {
+      saving = false;
+      if (r.ok) {
+        setStatus('Saved', 'text-green-500');
+        setTimeout(function () { setStatus('All changes saved', 'text-gray-400'); }, 2000);
+      } else {
+        setStatus('Save failed', 'text-rose-500');
+      }
+    })
+    .catch(function () {
+      saving = false;
+      setStatus('Save failed', 'text-rose-500');
+    });
+  }
+
+  function scheduleAutosave() {
+    setStatus('Unsaved changes', 'text-amber-500');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { saveTimer = null; save(); }, 1000);
+  }
+
+  titleEl.addEventListener('input', scheduleAutosave);
+  easyMDE.codemirror.on('change', scheduleAutosave);
+
+  // Ctrl+S / Cmd+S triggers immediate save
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      save();
+    }
   });
-  easyMDE.codemirror.on('change', function () {
-    dirty = easyMDE.value() !== originalContent;
-  });
-  // Mark clean on intentional save (form submit)
-  document.getElementById('edit-form').addEventListener('submit', function () {
-    dirty = false;
-  });
+
+  // Warn only if a save is in-flight or pending
   window.addEventListener('beforeunload', function (e) {
-    if (dirty) {
+    if (saving || saveTimer) {
       e.preventDefault();
       e.returnValue = '';
     }

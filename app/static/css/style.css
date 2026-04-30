@@ -3,8 +3,8 @@
 /*
  * COLOR TOKENS
  * ─────────────────────────────────────────────────────────
- * Primary action:   #3e7e8c  (brand-600 / teal)
- * Primary hover:    #2F6573  (brand-700 / teal dark)
+ * Primary action:   #7c3aed  (violet-600)
+ * Primary hover:    #6d28d9  (violet-700)
  * Layout bg:        #f9fafb  (gray-50)
  * Surface/card:     #ffffff  (white)
  * Border light:     #e5e7eb  (gray-200)
@@ -65,6 +65,15 @@
   --ls-wide:    0.015em;
   --ls-wider:   0.05em;
   --ls-widest:  0.1em;
+}
+
+/* ── Global focus-visible baseline ────────────────────── */
+
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
 }
 
 /* ── Base element defaults ─────────────────────────────── */
@@ -346,6 +355,84 @@ body.sidebar-collapsed #sidebar-toggle-icon {
 .no-transition,
 .no-transition * {
   transition: none !important;
+}
+
+/* ── Navigation progress bar ─────────────────────────── */
+
+#nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  z-index: 9999;
+  transition: width 0.2s ease, opacity 0.3s ease;
+  border-radius: 0 2px 2px 0;
+  pointer-events: none;
+}
+
+#nav-progress.nav-running {
+  animation: nav-grow 1.2s cubic-bezier(0.1, 0.6, 0.4, 1) forwards;
+}
+
+#nav-progress.nav-done {
+  width: 100% !important;
+  opacity: 0;
+}
+
+@keyframes nav-grow {
+  0%   { width: 0%; }
+  30%  { width: 50%; }
+  60%  { width: 75%; }
+  90%  { width: 92%; }
+  100% { width: 92%; }
+}
+
+/* ── Skeleton shimmer utility ─────────────────────────── */
+
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e9eaec 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Table view ──────────────────────────────────────── */
+
+/* Mobile: show only Title · Created · Edited */
+@media (max-width: 639px) {
+  #note-table-wrap .col-icon,
+  #note-table-wrap .col-words,
+  #note-table-wrap .col-actions {
+    display: none;
+  }
+}
+
+/* ── Notes list — mobile fixes ───────────────────────── */
+
+/* List-view: revert flex-row to column on small screens */
+@media (max-width: 639px) {
+  #note-grid [data-note-card] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  #note-grid [data-note-card] .note-preview {
+    -webkit-line-clamp: 3 !important;
+    line-clamp: 3 !important;
+  }
+}
+
+/* Context-menu trigger: always visible on touch devices */
+@media (pointer: coarse) {
+  [data-card-menu] > button {
+    opacity: 1 !important;
+  }
 }
 
 /* ── Note card preview ────────────────────────────────── */
