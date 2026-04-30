@@ -20,3 +20,7 @@ class Config:
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
     FLASK_ENV = os.getenv("FLASK_ENV", "development")
+
+    SESSION_COOKIE_SECURE = FLASK_ENV == "production"
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
