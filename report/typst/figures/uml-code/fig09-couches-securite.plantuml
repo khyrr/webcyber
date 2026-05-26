@@ -1,0 +1,29 @@
+@startuml
+' Figure 09 — Couches de sécurité (Compact Version)
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam ranksep 10
+skinparam nodesep 5
+skinparam defaultTextAlignment center
+
+' Color Definitions
+!define RED_LAYER #FFE5E5
+!define ORANGE_LAYER #FFF2E5
+!define BLUE_LAYER #E5F2FF
+!define GREEN_LAYER #E5F9E5
+!define GRAY_LAYER #F2F2F2
+!define DB_LAYER #E5E8F6
+
+package "1. AWS Security Group\n<size:10>(Firewall: Ports 22, 80, 443)</size>" as L1 RED_LAYER {
+    package "2. Système Hôte\n<size:10>(Ubuntu: SSH Key-only, Updates)</size>" as L2 ORANGE_LAYER {
+        package "3. Docker\n<size:10>(Réseau bridge, Non-root)</size>" as L3 BLUE_LAYER {
+            package "4. Nginx + TLS\n<size:10>(HTTPS, Security Headers)</size>" as L4 GREEN_LAYER {
+                package "5. Flask App\n<size:10>(Auth, Hash, CSRF)</size>" as L5 GRAY_LAYER {
+                    database "6. PostgreSQL\n<size:10>(Paramétrage, Isolation)</size>" as L6 DB_LAYER
+                }
+            }
+        }
+    }
+}
+@enduml

@@ -1,0 +1,140 @@
+% Figure 10 — Diagramme de déploiement UML
+% Noeuds : Client (browser), AWS (Route53 + EC2 contenant Docker + 3 conteneurs)
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[
+  noeud/.style={
+    draw=textdark, line width=0.8pt,
+    fill=white,
+    rounded corners=2pt,
+    align=center, font=\small,
+    inner sep=10pt
+  },
+  artefact/.style={
+    base, fill=bgsoft, draw=netgray, font=\footnotesize,
+    minimum width=2.6cm, minimum height=1cm
+  },
+  conteneur/.style={
+    base, line width=0.6pt,
+    minimum width=2.6cm, minimum height=1.6cm,
+    font=\scriptsize, align=center
+  },
+  protocole/.style={
+    -{Latex[length=2.5mm]}, line width=0.7pt
+  },
+  stereo/.style={
+    font=\scriptsize\itshape, text=netgray, anchor=south
+  }
+]
+
+  % --- Noeud Client ---
+  \node[noeud, fill=netgray!5, minimum width=3.6cm, minimum height=2.4cm]
+    (client)
+    {\textbf{\guillemotleft\,device\,\guillemotright}\\
+     \textbf{Poste client}\\[3pt]
+     \scriptsize Navigateur Web\\
+     \scriptsize (Chrome, Firefox, ...)};
+
+  % --- Noeud Route53 ---
+  \node[noeud, fill=accentyellow!10, draw=accentyellow!80!black,
+        right=24mm of client,
+        minimum width=3.4cm, minimum height=2.4cm]
+    (r53)
+    {\textbf{\guillemotleft\,DNS service\,\guillemotright}\\
+     \textbf{Route\,53}\\[3pt]
+     \scriptsize Zone hébergée\\
+     \scriptsize \texttt{webcyber.app}};
+
+  % --- Noeud EC2 (englobant) ---
+  \node[noeud, fill=awsorange!8, draw=awsorange,
+        right=22mm of r53,
+        minimum width=8.6cm, minimum height=8cm,
+        label={[stereo, text=awsorange]north:\guillemotleft\,EC2 instance — t2.micro\,\guillemotright}]
+    (ec2)
+    {};
+  \node[font=\small\bfseries, text=awsdark, anchor=north]
+    at ([yshift=-3mm]ec2.north) (ec2-title) {Hôte AWS — Ubuntu 22.04};
+
+  % --- Sous-noeud Docker Engine ---
+  \node[noeud, fill=dockerblue!8, draw=dockerblue,
+        minimum width=7.4cm, minimum height=6cm,
+        label={[stereo, text=dockerblue]north:\guillemotleft\,execution environment\,\guillemotright}]
+    at ([yshift=-7mm]ec2.center) (docker)
+    {};
+  \node[font=\footnotesize\bfseries, text=dockerblue, anchor=north]
+    at ([yshift=-3mm]docker.north) {Docker Engine 24 + Compose};
+
+  % --- Conteneur Nginx ---
+  \node[conteneur, fill=nginxgreen!12, draw=nginxgreen]
+    at ([yshift=12mm]docker.center) (c-nginx)
+    {\textbf{\guillemotleft\,container\,\guillemotright}\\
+     \textbf{nginx}\\[2pt]
+     \scriptsize \texttt{nginx:1.25-alpine}\\
+     \scriptsize \texttt{:80, :443}};
+
+  % --- Conteneur Flask ---
+  \node[conteneur, fill=flaskgray!15, draw=flaskgray,
+        below left=10mm and 0mm of c-nginx]
+    (c-app)
+    {\textbf{\guillemotleft\,container\,\guillemotright}\\
+     \textbf{app}\\[2pt]
+     \scriptsize \texttt{python:3.11-slim}\\
+     \scriptsize Flask + Gunicorn\\
+     \scriptsize \texttt{:5000} (interne)};
+
+  % --- Conteneur PostgreSQL ---
+  \node[conteneur, fill=pgblue!18, draw=pgblue,
+        below right=10mm and 0mm of c-nginx]
+    (c-db)
+    {\textbf{\guillemotleft\,container\,\guillemotright}\\
+     \textbf{db}\\[2pt]
+     \scriptsize \texttt{postgres:15-alpine}\\
+     \scriptsize \texttt{:5432} (interne)};
+
+  % --- Volume persistant ---
+  \node[artefact, fill=accentyellow!15, draw=accentyellow!80!black,
+        below=4mm of c-db,
+        minimum width=2.6cm, minimum height=0.8cm]
+    (vol)
+    {\textbf{\guillemotleft\,artifact\,\guillemotright}\\\scriptsize \texttt{db-data} (volume)};
+
+  \draw[protocole, dashed, color=accentyellow!80!black]
+    (c-db.south) -- (vol.north);
+
+  % --- Liaisons Docker entre conteneurs ---
+  \draw[protocole, color=netgray]
+    (c-nginx.south) -- node[etiquette, sloped, font=\tiny]
+      {\guillemotleft\,HTTP\,\guillemotright \, \texttt{:5000}}
+    (c-app.north);
+
+  \draw[protocole, color=netgray]
+    (c-app.east) -- node[etiquette, sloped, font=\tiny]
+      {\guillemotleft\,TCP\,\guillemotright \, \texttt{:5432}}
+    (c-db.west);
+
+  % --- Liaisons inter-noeuds ---
+  \draw[protocole, color=textdark, line width=1pt]
+    (client.east) -- node[etiquette, above, font=\scriptsize]
+      {\guillemotleft\,DNS\,\guillemotright}
+    (r53.west);
+
+  \draw[protocole, color=tlsgreen, line width=1pt]
+    ([yshift=4mm]r53.east) -- node[etiquette, above, text=tlsgreen, font=\scriptsize]
+      {\guillemotleft\,HTTPS \texttt{:443}\,\guillemotright}
+    ([yshift=4mm]ec2.west|-r53.east);
+
+  \draw[protocole, color=tlsgreen, dashed]
+    ([yshift=-4mm]ec2.west|-r53.east) -- node[etiquette, below, text=tlsgreen, font=\scriptsize]
+      {réponse TLS}
+    ([yshift=-4mm]r53.east);
+
+  % --- Étiquette Elastic IP sur le noeud EC2 ---
+  \node[etiquette, draw=awsorange, fill=awsorange!15,
+        anchor=north east, font=\tiny]
+    at ([xshift=-4mm,yshift=-3mm]ec2.north east)
+    {Elastic IP fixe};
+
+\end{tikzpicture}
+\end{document}

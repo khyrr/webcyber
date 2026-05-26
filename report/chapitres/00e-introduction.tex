@@ -1,0 +1,98 @@
+\chapter*{Introduction générale}
+\markboth{Introduction générale}{Introduction générale}
+
+\section*{Contexte}
+
+À l'ère de la transformation numérique, la majorité des services
+quotidiens — communication, gestion documentaire, commerce,
+administration — repose sur des applications web hébergées dans le
+\emph{cloud}. Cette omniprésence du Web s'est accompagnée d'une
+explosion des incidents de sécurité : selon le rapport
+\textit{Verizon Data Breach Investigations Report 2023}, plus de 80\,\%
+des compromissions enregistrées exploitent des vulnérabilités
+applicatives ou des erreurs de configuration. Concevoir une application
+web ne se résume donc plus à coder un service fonctionnel : il faut
+également maîtriser son hébergement, son réseau, son cycle de
+déploiement et sa surface d'attaque.
+
+Le mouvement \emph{DevOps} et l'adoption généralisée des \textbf{conteneurs}
+ont profondément changé la manière de construire et de livrer ces
+applications. Docker offre une portabilité quasi parfaite entre les
+environnements de développement et de production, tandis que les
+fournisseurs de \emph{cloud} comme \textbf{Amazon Web Services} (AWS)
+permettent de provisionner en quelques minutes des infrastructures
+auparavant réservées aux grands centres de données. La maîtrise de
+ces outils est désormais une compétence attendue de tout développeur
+ou administrateur système.
+
+\section*{Problématique}
+
+Si les briques technologiques sont accessibles, leur \emph{intégration
+sécurisée} reste un exercice difficile : combien de bases de données
+exposées sur Internet, combien de certificats expirés, combien
+d'applications vulnérables aux injections SQL ou au \emph{cross-site
+scripting} ?
+
+La problématique de ce projet peut être formulée ainsi :
+
+\begin{quote}
+\itshape Comment concevoir, développer et déployer une application
+web fonctionnelle dans le \emph{cloud}, en appliquant de manière
+explicite et vérifiable les bonnes pratiques de cybersécurité, depuis
+la couche réseau jusqu'au code applicatif ?
+\end{quote}
+
+\section*{Objectifs}
+
+Le projet \textbf{WebCyber} apporte une réponse pédagogique et
+pragmatique à cette problématique en poursuivant les objectifs
+suivants :
+
+\begin{enumerate}
+  \item Concevoir une application web simple mais réaliste : une
+        application personnelle de prise de notes (CRUD complet,
+        authentification, isolation des données par utilisateur).
+  \item Conteneuriser l'ensemble des composants (Nginx, application
+        Flask, base PostgreSQL) avec Docker et Docker Compose.
+  \item Déployer la solution sur une infrastructure AWS minimaliste
+        mais représentative (EC2, Elastic IP, Security Group, Route\,53).
+  \item Mettre en œuvre une chaîne de sécurité \textbf{en profondeur}
+        couvrant le réseau, le système, les conteneurs, le proxy, le
+        code applicatif et la base de données.
+  \item Activer HTTPS via un certificat Let's Encrypt, avec
+        renouvellement automatisé.
+  \item Évaluer la posture de sécurité du déploiement à l'aide
+        d'outils standard (Nmap, Nikto, testssl.sh) et discuter les
+        résultats.
+  \item Rédiger une documentation technique exploitable permettant à
+        un autre étudiant ou ingénieur de reproduire la solution.
+\end{enumerate}
+
+\section*{Plan du rapport}
+
+Ce mémoire s'articule autour de cinq chapitres :
+
+\begin{itemize}
+  \item Le \textbf{chapitre 1} pose le \textit{contexte général} et
+        l'\textit{état de l'art} : \emph{cloud computing},
+        conteneurisation, architecture des applications web modernes
+        et principales menaces de sécurité (OWASP Top 10).
+  \item Le \textbf{chapitre 2} formalise l'\textit{analyse et la
+        spécification des besoins} : acteurs, cas d'utilisation,
+        besoins fonctionnels et non fonctionnels.
+  \item Le \textbf{chapitre 3} présente la \textit{conception} de la
+        solution : architecture globale, infrastructure AWS,
+        architecture Docker, modèle de données et conception de la
+        sécurité \textbf{en profondeur}.
+  \item Le \textbf{chapitre 4} détaille la \textit{réalisation et le
+        déploiement} : choix technologiques, implémentation,
+        construction des images Docker, mise en place de l'instance
+        EC2, configuration de Route\,53, du proxy Nginx et des
+        certificats Let's Encrypt.
+  \item Le \textbf{chapitre 5} expose la phase de \textit{tests
+        fonctionnels et d'analyse de sécurité} : scans Nmap, audit
+        Nikto, évaluation TLS et synthèse des recommandations.
+\end{itemize}
+
+Une \textit{conclusion générale} dresse le bilan du projet et propose
+des pistes d'évolution.

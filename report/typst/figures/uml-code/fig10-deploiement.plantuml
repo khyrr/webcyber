@@ -1,0 +1,44 @@
+@startuml
+' Figure 10 — Diagramme de déploiement (Horizontal Optimized)
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype polyline
+skinparam ranksep 40
+skinparam nodesep 20
+
+' Color Palette
+!define AWS_COLOR #FF9900
+!define DOCKER_COLOR #2496ED
+
+node "<<device>>\nPoste Client" as Client #F2F2F2 {
+    artifact "Navigateur Web" as Browser
+}
+
+node "<<DNS service>>\nRoute 53" as R53 #FEFFEC {
+    artifact "webcyber.app" as DNS
+}
+
+node "<<EC2 instance>>\nHôte AWS (Ubuntu)" as EC2 AWS_COLOR {
+    note top of EC2 : Elastic IP fixe
+    
+    node "<<execution environment>>\nDocker Engine" as Docker DOCKER_COLOR {
+        ' Aligning containers horizontally inside Docker
+        artifact "<<container>>\n**Nginx**" as Nginx #E1F5FE
+        artifact "<<container>>\n**App (Flask)**" as Flask #F5F5F5
+        artifact "<<container>>\n**DB (Postgres)**" as DB #E8EAF6
+        folder "<<artifact>>\n**db-data**" as Vol #FFF9C4
+    }
+}
+
+' Connections
+Client -[#black,bold]- R53 : <<DNS>>
+R53 -[#green,bold]- Nginx : <<HTTPS :443>>
+
+' Internal Logic - keeping it on one line where possible
+Nginx -[#gray]- Flask : <<HTTP :5000>>
+Flask -[#gray]- DB : <<TCP :5432>>
+DB .. Vol : <<persistance>>
+
+@enduml

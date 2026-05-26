@@ -1,0 +1,94 @@
+% Figure 02 — Infrastructure AWS détaillée
+% VPC, public subnet, Security Group, EC2, Elastic IP, Route53
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[node distance=10mm]
+
+  % --- Cloud AWS (englobant) ---
+  \node[cloud, minimum width=14cm, minimum height=10.5cm,
+        label={[font=\large\bfseries, text=awsorange]north:Région AWS — \texttt{eu-west-3} (Paris)}]
+    (aws) {};
+
+  % --- Route53 (à gauche, hors VPC) ---
+  \node[service, fill=accentyellow!15, draw=accentyellow!80!black,
+        minimum width=3cm, minimum height=1.6cm,
+        anchor=west]
+    at ([xshift=8mm,yshift=15mm]aws.west) (r53)
+    {\textbf{Route\,53}\\\scriptsize Zone hébergée\\\scriptsize \texttt{webcyber.app}};
+
+  % --- VPC ---
+  \node[zone, fill=awsblue!5, draw=awsblue, line width=0.7pt,
+        minimum width=11.5cm, minimum height=7.5cm,
+        label={[font=\normalsize\bfseries, text=awsblue]north west:VPC \texttt{10.0.0.0/16}}]
+    at ([xshift=15mm,yshift=-15mm]aws.center) (vpc) {};
+
+  % --- Internet Gateway (sur la frontière VPC) ---
+  \node[service, fill=awsorange!20, draw=awsorange,
+        minimum width=2.4cm, minimum height=0.9cm, font=\scriptsize]
+    at (vpc.north) (igw) {\textbf{Internet Gateway}};
+
+  % --- Subnet public ---
+  \node[zone, fill=tlsgreen!5, draw=tlsgreen,
+        minimum width=10cm, minimum height=5.4cm,
+        label={[font=\small\bfseries, text=tlsgreen]north west:Public Subnet \texttt{10.0.1.0/24}}]
+    at ([yshift=-5mm]vpc.center) (subnet) {};
+
+  % --- Security Group (entoure l'EC2) ---
+  \node[zone, fill=accentred!5, draw=accentred, line width=0.7pt,
+        minimum width=8cm, minimum height=4cm,
+        label={[font=\small\bfseries, text=accentred]north:Security Group \texttt{webcyber-sg}}]
+    at ([yshift=-3mm]subnet.center) (sg) {};
+
+  % --- EC2 ---
+  \node[service, fill=awsorange!15, draw=awsorange,
+        minimum width=5cm, minimum height=2.2cm]
+    at ([yshift=-5mm]sg.center) (ec2)
+    {\textbf{EC2 — \texttt{t2.micro}}\\[1pt]
+     \scriptsize Ubuntu Server 22.04 LTS\\
+     \scriptsize 1 vCPU \,/\, 1 GiB RAM \,/\, 8 GiB EBS\\
+     \scriptsize Docker Engine \(+\) Docker Compose};
+
+  % --- Elastic IP ---
+  \node[base, fill=awsorange!30, draw=awsorange, font=\scriptsize,
+        minimum width=2.6cm, minimum height=0.9cm,
+        anchor=south east]
+    at ([xshift=-2mm,yshift=2mm]ec2.north east)
+    (eip) {\textbf{Elastic IP}\\\tiny IPv4 publique fixe};
+
+  % Lien EIP <-> EC2
+  \draw[fleche, dashed, color=awsorange]
+    (eip.south) -- ([yshift=-1mm]ec2.north east);
+
+  % --- Tableau des règles SG (à droite) ---
+  \node[legendebox, draw=accentred, fill=accentred!5,
+        anchor=north west, font=\scriptsize, align=left,
+        minimum width=4.4cm]
+    at ([xshift=2mm,yshift=-2mm]sg.north east)
+    (rules)
+    {\textbf{\color{accentred}Règles entrantes}\\[2pt]
+     \begin{tabular}{@{}lll@{}}
+       Port & Proto & Source\\\hline
+       22 & TCP & \texttt{0.0.0.0/0}\\
+       80 & TCP & \texttt{0.0.0.0/0}\\
+       443 & TCP & \texttt{0.0.0.0/0}\\
+     \end{tabular}};
+
+  % --- Flux Internet -> IGW -> SG -> EC2 ---
+  \node[service, fill=netgray!15, draw=netgray, font=\scriptsize,
+        minimum width=2.2cm, minimum height=0.9cm,
+        anchor=south]
+    at ([yshift=18mm]igw.north) (internet) {Internet};
+
+  \draw[fleche-bold] (internet) -- (igw);
+  \draw[fleche-bold] (igw) -- (subnet.north);
+
+  % --- Lien Route53 -> EIP (résolution DNS) ---
+  \draw[fleche, dashed, color=awsorange]
+    (r53.east) to[bend left=12]
+    node[etiquette, above, sloped]{record A : \texttt{webcyber.app} \(\to\) EIP}
+    (eip.west);
+
+\end{tikzpicture}
+\end{document}

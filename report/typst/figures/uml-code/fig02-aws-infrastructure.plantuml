@@ -1,0 +1,55 @@
+@startuml
+' Figure 02 — Infrastructure AWS détaillée
+
+' Visual settings
+skinparam roundcorner 10
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+
+title Figure 02 — Infrastructure AWS détaillée
+
+' --- External Services ---
+node "Internet" as Internet #LightGray
+node "Route 53\nwebcyber.app" as R53 #AntiqueWhite
+
+' --- AWS Cloud ---
+cloud "Région AWS — eu-west-3 (Paris)" as AWS {
+
+    ' IGW sits on the edge of the VPC
+    entity "Internet Gateway" as IGW #Orange
+
+    rectangle "VPC 10.0.0.0/16" as VPC #AliceBlue {
+        
+        rectangle "Public Subnet 10.0.1.0/24" as Subnet #HoneyDew {
+            
+            rectangle "Security Group webcyber-sg" as SG #LavenderBlush {
+                
+                node "EC2 — t2.micro\nUbuntu Server 22.04 LTS" as EC2 #OldLace {
+                    stack "Docker Engine" as Docker
+                    stack "Docker Compose" as Compose
+                }
+                
+                label "Elastic IP\n(Fixed Public IPv4)" as EIP #Orange
+            }
+        }
+    }
+}
+
+' --- Connectivity & Logic ---
+Internet -down-> IGW
+IGW -down-> Subnet
+R53 .[#Orange].> EIP : record A: webcyber.app → EIP
+EIP .[#Orange].> EC2 : (Attached)
+
+' Floating Rules Table (Legend)
+legend right
+  <color:Red><b>Règles entrantes (SG)</b></color>
+  |= Port |= Proto |= Source |
+  | 22 | TCP | 0.0.0.0/0 |
+  | 80 | TCP | 0.0.0.0/0 |
+  | 443 | TCP | 0.0.0.0/0 |
+end legend
+
+@enduml

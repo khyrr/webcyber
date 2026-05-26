@@ -1,0 +1,245 @@
+\chapter{Contexte général et état de l'art}
+
+\section*{Introduction}
+
+Ce premier chapitre situe le projet dans son contexte académique et
+technologique. Il rappelle d'abord le cadre institutionnel
+(l'\Institute), puis présente les fondements théoriques mobilisés :
+\emph{cloud computing}, conteneurisation, architecture des applications
+web modernes et grands principes de cybersécurité. Cette base
+conceptuelle permet de motiver, dans les chapitres suivants, les choix
+de conception et d'implémentation retenus.
+
+\section{Cadre institutionnel}
+
+L'\textbf{\Institute} est un établissement d'enseignement supérieur
+mauritanien qui forme depuis plusieurs décennies des cadres dans les
+domaines de la gestion, de la comptabilité et, plus récemment, du
+développement informatique. Le présent travail s'inscrit dans le
+parcours de \textbf{Licence en Développement Informatique} et
+constitue le \textbf{Projet de Fin d'Études} (PFE) clôturant ce cursus.
+
+L'objectif pédagogique est double : (i)~mettre en pratique de manière
+intégrée les compétences acquises durant la formation (programmation,
+bases de données, réseaux, systèmes, sécurité) et (ii)~confronter
+l'étudiant à un scénario réaliste de cycle complet --- de la
+spécification jusqu'au déploiement et à l'audit de sécurité.
+
+\section{Cloud computing}
+
+\subsection{Définition}
+
+Le \textbf{cloud computing} désigne la mise à disposition à la demande,
+via Internet, de ressources informatiques (calcul, stockage, réseau,
+bases de données, services applicatifs). Le NIST en donne une
+définition de référence reposant sur cinq caractéristiques essentielles
+\cite{nist-cloud} :
+
+\begin{itemize}
+  \item libre-service à la demande (\textit{on-demand self-service});
+  \item accès large via le réseau (\textit{broad network access});
+  \item mutualisation des ressources (\textit{resource pooling});
+  \item élasticité rapide (\textit{rapid elasticity});
+  \item facturation à l'usage (\textit{measured service}).
+\end{itemize}
+
+\subsection{Modèles de service}
+
+Trois modèles de service principaux sont communément distingués :
+
+\begin{itemize}
+  \item \textbf{IaaS} (\textit{Infrastructure as a Service}) : le
+        fournisseur expose des ressources virtualisées brutes
+        (machines, réseaux, disques). Le client gère l'OS, le \emph{middleware}
+        et l'application. \emph{Exemple : AWS EC2.}
+  \item \textbf{PaaS} (\textit{Platform as a Service}) : le fournisseur
+        gère l'infrastructure et l'environnement d'exécution. Le client
+        fournit le code applicatif. \emph{Exemple : AWS Elastic Beanstalk,
+        Heroku.}
+  \item \textbf{SaaS} (\textit{Software as a Service}) : le client
+        consomme directement une application complète accessible via le
+        Web. \emph{Exemple : Gmail, Microsoft~365.}
+\end{itemize}
+
+Pour ce projet, le modèle retenu est l'\textbf{IaaS}, car il offre le
+meilleur compromis entre maîtrise pédagogique des couches techniques
+(système, réseau, conteneurs, sécurité) et simplicité de mise en
+\oe{}uvre.
+
+\subsection{Le fournisseur AWS}
+
+\textbf{Amazon Web Services} est le leader mondial du \emph{cloud}
+public, avec plus d'une trentaine de \emph{régions} (zones
+géographiques indépendantes) et une offre couvrant l'ensemble des
+modèles de service. Les briques utilisées dans ce projet sont :
+
+\begin{itemize}
+  \item \textbf{EC2} (\textit{Elastic Compute Cloud}) : instances de
+        machines virtuelles facturées à l'heure ou à la seconde;
+  \item \textbf{Elastic IP} : adresse IPv4 publique fixe, associable à
+        une instance EC2;
+  \item \textbf{Security Group} : pare-feu \emph{stateful} fonctionnant
+        au niveau de l'instance;
+  \item \textbf{Route\,53} : service DNS managé (zone hébergée et
+        enregistrement de domaine).
+\end{itemize}
+
+\section{Conteneurisation}
+
+\subsection{Du \emph{bare-metal} aux conteneurs}
+
+L'évolution des modèles d'exécution applicatifs peut se résumer en
+trois grandes étapes :
+
+\begin{enumerate}
+  \item \textbf{\emph{Bare-metal}} : un serveur physique = une
+        application. Coût élevé, ressources sous-utilisées.
+  \item \textbf{Virtualisation} : un serveur physique exécute plusieurs
+        machines virtuelles, chacune contenant son OS complet. Meilleure
+        densité, mais surcharge importante (chaque VM démarre un noyau).
+  \item \textbf{Conteneurs} : plusieurs processus isolés partagent le
+        \emph{noyau} de l'hôte, en utilisant les \emph{namespaces} et
+        les \emph{cgroups} Linux pour cloisonner les ressources et la
+        visibilité. Démarrage en quelques centaines de millisecondes,
+        empreinte mémoire réduite.
+\end{enumerate}
+
+\subsection{Docker et Docker Compose}
+
+\textbf{Docker} est aujourd'hui l'outil de référence pour la création
+et l'exécution de conteneurs. Il introduit deux concepts fondamentaux :
+
+\begin{itemize}
+  \item l'\textbf{image} : un \emph{instantané} immuable contenant
+        l'ensemble des fichiers nécessaires à l'exécution d'une
+        application (binaires, bibliothèques, configuration);
+  \item le \textbf{conteneur} : une instance d'exécution d'une image,
+        avec son propre espace de noms (réseau, processus, fichiers).
+\end{itemize}
+
+\textbf{Docker Compose} est un outil d'\emph{orchestration locale} qui
+permet, à partir d'un unique fichier déclaratif YAML
+(\texttt{docker-compose.yml}), de décrire un ensemble de services, leurs
+relations, leurs réseaux et leurs volumes. Une seule commande suffit
+ensuite à démarrer ou arrêter l'ensemble de la pile applicative.
+
+\subsection{Bénéfices pour ce projet}
+
+\begin{itemize}
+  \item \textbf{Reproductibilité} : le même fichier
+        \texttt{docker-compose.yml} fonctionne à l'identique sur le
+        poste de développement et sur l'instance EC2.
+  \item \textbf{Isolation} : chaque service tourne dans son propre
+        conteneur, avec ses dépendances précises.
+  \item \textbf{Sécurité} : le réseau interne Docker permet de
+        n'exposer que le proxy Nginx, en gardant l'application Flask et
+        la base PostgreSQL invisibles depuis Internet.
+  \item \textbf{Portabilité} : la migration vers un autre fournisseur
+        \emph{cloud} ne nécessite que de relancer la même pile sur une
+        nouvelle machine.
+\end{itemize}
+
+\section{Architecture des applications web modernes}
+
+\subsection{Le modèle 3-tiers}
+
+Une application web suit classiquement un découpage en trois couches :
+
+\begin{itemize}
+  \item \textbf{Présentation} (\emph{front-end}) : navigateur du
+        client, qui interprète HTML, CSS et JavaScript;
+  \item \textbf{Logique métier} (\emph{back-end}) : serveur applicatif
+        qui traite les requêtes, exécute la logique et rend des
+        réponses;
+  \item \textbf{Données} : base de données qui assure la persistance.
+\end{itemize}
+
+\subsection{Le rôle du proxy inverse}
+
+Un \textbf{proxy inverse} est un serveur intermédiaire qui se place
+entre les clients et l'application. Il assure plusieurs fonctions
+essentielles :
+
+\begin{itemize}
+  \item \textbf{Terminaison TLS} : il déchiffre le trafic HTTPS, ce qui
+        évite à l'application de gérer elle-même les certificats;
+  \item \textbf{Routage} : il dirige les requêtes vers le bon
+        \emph{back-end};
+  \item \textbf{Mise en cache} et compression;
+  \item \textbf{Sécurité périmétrique} : ajout d'en-têtes, limitation
+        de débit, filtrage.
+\end{itemize}
+
+Pour ce projet, le proxy choisi est \textbf{Nginx}, en raison de sa
+légèreté, de sa robustesse et de la richesse de sa documentation.
+
+\section{Cybersécurité applicative}
+
+\subsection{Le Top 10 OWASP}
+
+L'\textbf{Open Web Application Security Project} (OWASP) publie
+périodiquement la liste des dix risques applicatifs les plus
+critiques. La version 2021, qui sert de référence à ce projet, met
+notamment l'accent sur \cite{owasp-top10} :
+
+\begin{enumerate}
+  \item \textbf{Broken Access Control} : contournement des contrôles
+        d'accès, notamment via la manipulation d'identifiants
+        (\textit{IDOR});
+  \item \textbf{Cryptographic Failures} : stockage ou transmission de
+        données sensibles sans chiffrement adéquat;
+  \item \textbf{Injection} : injection SQL, NoSQL, OS command;
+  \item \textbf{Insecure Design} : absence de modélisation de la menace
+        en amont du développement;
+  \item \textbf{Security Misconfiguration} : valeurs par défaut, ports
+        inutiles, en-têtes manquants;
+  \item \textbf{Vulnerable and Outdated Components} : utilisation de
+        bibliothèques non maintenues;
+  \item \textbf{Identification and Authentication Failures};
+  \item \textbf{Software and Data Integrity Failures};
+  \item \textbf{Security Logging and Monitoring Failures};
+  \item \textbf{Server-Side Request Forgery (SSRF)}.
+\end{enumerate}
+
+\subsection{La défense en profondeur}
+
+La \textbf{défense en profondeur} (\textit{defense-in-depth}) consiste à
+empiler plusieurs barrières de sécurité indépendantes, de telle sorte
+que la compromission d'une couche ne suffise pas à compromettre le
+système entier. Ce principe, hérité du domaine militaire, est
+particulièrement pertinent pour les applications hébergées dans le
+\emph{cloud}, où les surfaces d'attaque sont multiples (réseau,
+système, conteneurs, code, données).
+
+Le chapitre 3 montrera comment ce principe se traduit concrètement dans
+WebCyber par six couches de sécurité empilées.
+
+\subsection{TLS et HTTPS}
+
+\textbf{Transport Layer Security} (TLS) est le protocole standard pour
+chiffrer les communications sur Internet. \textbf{HTTPS} désigne
+simplement HTTP encapsulé dans TLS. Trois propriétés sont garanties :
+
+\begin{itemize}
+  \item \textbf{Confidentialité} : le contenu des échanges ne peut être
+        lu par un tiers;
+  \item \textbf{Intégrité} : le contenu ne peut être modifié sans
+        détection;
+  \item \textbf{Authenticité} : le client peut vérifier l'identité du
+        serveur grâce à un certificat signé par une autorité de
+        confiance.
+\end{itemize}
+
+\textbf{Let's Encrypt} est une autorité de certification gratuite
+fondée en 2014 par l'\emph{Internet Security Research Group}, qui
+émet des certificats TLS valides 90 jours, renouvelables
+automatiquement via le protocole \textbf{ACME}.
+
+\section{Conclusion du chapitre}
+
+Ce chapitre a présenté les concepts clés mobilisés tout au long du
+projet : modèle IaaS et services AWS, conteneurisation par Docker,
+architecture web 3-tiers, principes OWASP et défense en profondeur,
+ainsi que TLS et Let's Encrypt. Le chapitre suivant s'appuie sur ces
+fondations pour formaliser les besoins fonctionnels et non fonctionnels
+de l'application WebCyber.

@@ -1,0 +1,120 @@
+% Figure 09 — Couches de sécurité (defense-in-depth)
+% Couches concentriques : SG -> OS -> Docker -> Nginx/TLS -> Flask -> DB
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[
+  layer/.style={
+    rounded corners=8pt, line width=0.7pt,
+    align=center, font=\footnotesize\bfseries
+  },
+  detail/.style={
+    base, font=\scriptsize, align=left,
+    text width=5.6cm, inner sep=4pt
+  }
+]
+
+  % --- Couches concentriques (du plus extérieur au plus intérieur) ---
+  \node[layer, fill=accentred!12, draw=accentred,
+        minimum width=14cm, minimum height=10cm,
+        text=accentred,
+        label={[font=\small\bfseries, text=accentred]north:1. AWS Security Group (\textit{firewall réseau périmétrique})}]
+    (l1) {};
+
+  \node[layer, fill=awsorange!15, draw=awsorange,
+        minimum width=12cm, minimum height=8cm,
+        text=awsdark,
+        label={[font=\small\bfseries, text=awsdark]north:2. Système hôte — Ubuntu 22.04 (\textit{SSH par clé, mises à jour, ufw}) }]
+    (l2) {};
+
+  \node[layer, fill=dockerblue!15, draw=dockerblue,
+        minimum width=10cm, minimum height=6cm,
+        text=dockerblue,
+        label={[font=\small\bfseries, text=dockerblue]north:3. Docker (\textit{isolation conteneurs, utilisateur non-root}) }]
+    (l3) {};
+
+  \node[layer, fill=nginxgreen!15, draw=nginxgreen,
+        minimum width=8cm, minimum height=4cm,
+        text=nginxgreen,
+        label={[font=\small\bfseries, text=nginxgreen]north:4. Nginx \(+\) TLS (\textit{HTTPS, en-têtes de sécurité}) }]
+    (l4) {};
+
+  \node[layer, fill=flaskgray!18, draw=flaskgray,
+        minimum width=6cm, minimum height=2.4cm,
+        text=flaskgray,
+        label={[font=\small\bfseries, text=flaskgray]north:5. Flask (\textit{auth, CSRF, sessions, validation}) }]
+    (l5) {};
+
+  \node[layer, fill=pgblue!22, draw=pgblue,
+        minimum width=4cm, minimum height=1cm,
+        text=white]
+    (l6) {6. Données — PostgreSQL\\(\textit{requêtes paramétrées})};
+
+  % --- Détails à droite ---
+  \node[detail, fill=accentred!5, draw=accentred,
+        anchor=west]
+    at ([xshift=12mm]l1.east|-l1.north)
+    (d1)
+    {\textbf{\color{accentred}Couche 1 — Security Group}\\
+     \(\bullet\) 22/tcp, 80/tcp, 443/tcp uniquement\\
+     \(\bullet\) Tout le reste \texttt{DROP} par défaut\\
+     \(\bullet\) Pas de port DB exposé};
+
+  \node[detail, fill=awsorange!5, draw=awsorange,
+        anchor=north west, below=2mm of d1]
+    (d2)
+    {\textbf{\color{awsdark}Couche 2 — Système hôte}\\
+     \(\bullet\) SSH \texttt{PasswordAuthentication no}\\
+     \(\bullet\) \texttt{unattended-upgrades} actif\\
+     \(\bullet\) Compte \texttt{ubuntu} non-root};
+
+  \node[detail, fill=dockerblue!5, draw=dockerblue,
+        anchor=north west, below=2mm of d2]
+    (d3)
+    {\textbf{\color{dockerblue}Couche 3 — Docker}\\
+     \(\bullet\) Conteneurs sur réseau \texttt{bridge} privé\\
+     \(\bullet\) DB et app \emph{non publiés}\\
+     \(\bullet\) Utilisateur \texttt{appuser} (UID 1000)\\
+     \(\bullet\) Volumes nommés (pas de bind sensible)};
+
+  \node[detail, fill=nginxgreen!5, draw=nginxgreen,
+        anchor=north east]
+    at ([xshift=-12mm]l1.west|-l1.north)
+    (d4)
+    {\textbf{\color{nginxgreen}Couche 4 — Nginx \(+\) TLS}\\
+     \(\bullet\) Certificat Let's Encrypt (TLS 1.2/1.3)\\
+     \(\bullet\) Redirection \texttt{:80 \(\to\) :443}\\
+     \(\bullet\) HSTS, CSP, X-Frame-Options : DENY\\
+     \(\bullet\) X-Content-Type-Options : nosniff\\
+     \(\bullet\) Referrer-Policy : same-origin};
+
+  \node[detail, fill=flaskgray!5, draw=flaskgray,
+        anchor=north east, below=2mm of d4]
+    (d5)
+    {\textbf{\color{flaskgray}Couche 5 — Flask}\\
+     \(\bullet\) Hash PBKDF2-SHA256 (Werkzeug)\\
+     \(\bullet\) CSRF token (Flask-WTF) sur tout POST\\
+     \(\bullet\) Cookie session : \texttt{Secure}, \texttt{HttpOnly}\\
+     \(\bullet\) \texttt{@login\_required} sur routes privées\\
+     \(\bullet\) Validation WTForms (longueurs, types)};
+
+  \node[detail, fill=pgblue!5, draw=pgblue,
+        anchor=north east, below=2mm of d5]
+    (d6)
+    {\textbf{\color{pgblue}Couche 6 — Données}\\
+     \(\bullet\) Requêtes paramétrées (SQLAlchemy)\\
+     \(\bullet\) Filtre \texttt{user\_id} systématique\\
+     \(\bullet\) Mot de passe DB long et aléatoire\\
+     \(\bullet\) Volume chiffré au niveau EBS};
+
+  % Flèches discrètes des détails vers les couches correspondantes
+  \draw[fleche, color=accentred,    dashed] (d1.west) -- ([xshift=-2mm]d1.west|-l1.north);
+  \draw[fleche, color=awsdark,      dashed] (d2.west) -- ([xshift=-4mm]d2.west|-l2.east);
+  \draw[fleche, color=dockerblue,   dashed] (d3.west) -- ([xshift=-6mm]d3.west|-l3.east);
+  \draw[fleche, color=nginxgreen,   dashed] (d4.east) -- ([xshift=2mm]d4.east|-l4.west);
+  \draw[fleche, color=flaskgray,    dashed] (d5.east) -- ([xshift=4mm]d5.east|-l5.west);
+  \draw[fleche, color=pgblue,       dashed] (d6.east) -- ([xshift=6mm]d6.east|-l6.west);
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,88 @@
+% Figure 01 — Architecture globale
+% Internet -> Route53 -> EIP -> EC2 -> Docker stack
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[node distance=8mm and 14mm]
+
+  % --- Bloc Internet / Client ---
+  \node[service, fill=netgray!10, draw=netgray, minimum width=3.2cm]
+    (client) {\textbf{Navigateur Web}\\\footnotesize Utilisateur final};
+
+  \node[service, fill=accentyellow!15, draw=accentyellow!80!black,
+        right=18mm of client, minimum width=3cm]
+    (dns) {\textbf{Route\,53}\\\footnotesize \texttt{webcyber.app}};
+
+  % --- Cloud AWS ---
+  \node[cloud, right=22mm of dns,
+        minimum width=8.5cm, minimum height=7.5cm,
+        label={[font=\small\bfseries, text=awsorange]north:AWS Cloud — eu-west-3 (Paris)}]
+    (aws) {};
+
+  % VPC à l'intérieur du cloud AWS
+  \node[zone, fill=awsblue!5, draw=awsblue,
+        minimum width=7cm, minimum height=6cm,
+        label={[font=\footnotesize\bfseries, text=awsblue]north:VPC \texttt{10.0.0.0/16}}]
+    at ([yshift=-3mm]aws.center) (vpc) {};
+
+  % Security Group
+  \node[zone, fill=accentred!5, draw=accentred,
+        minimum width=5.6cm, minimum height=4.6cm,
+        label={[font=\footnotesize\bfseries, text=accentred]north:Security Group \texttt{webcyber-sg}}]
+    at ([yshift=-4mm]vpc.center) (sg) {};
+
+  % EC2
+  \node[service, fill=awsorange!15, draw=awsorange,
+        minimum width=4.6cm, minimum height=3.4cm,
+        font=\small,
+        label={[font=\scriptsize\bfseries, text=awsdark]north:EC2 \texttt{t2.micro} — Ubuntu 22.04}]
+    at ([yshift=-3mm]sg.center) (ec2) {};
+
+  % Docker stack à l'intérieur de l'EC2
+  \node[base, fill=dockerblue!10, draw=dockerblue,
+        minimum width=4cm, minimum height=2.4cm,
+        font=\scriptsize,
+        label={[font=\scriptsize\bfseries, text=dockerblue]north:Docker Compose}]
+    at ([yshift=-2mm]ec2.center) (docker) {};
+
+  % 3 conteneurs miniatures
+  \node[base, fill=nginxgreen!20, draw=nginxgreen, font=\tiny,
+        minimum width=1cm, minimum height=0.7cm]
+    at ([xshift=-12mm,yshift=-2mm]docker.center) (nginx) {Nginx};
+  \node[base, fill=flaskgray!25, draw=flaskgray, font=\tiny,
+        minimum width=1cm, minimum height=0.7cm]
+    at ([xshift=0mm,yshift=-2mm]docker.center) (app) {Flask};
+  \node[base, fill=pgblue!25, draw=pgblue, font=\tiny,
+        minimum width=1cm, minimum height=0.7cm]
+    at ([xshift=12mm,yshift=-2mm]docker.center) (db) {Postgres};
+
+  % Elastic IP en étiquette sur EC2
+  \node[etiquette, draw=awsorange, fill=awsorange!15,
+        anchor=south east]
+    at ([xshift=-2mm,yshift=2mm]ec2.south east) {Elastic IP};
+
+  % --- Flèches ---
+  \draw[fleche-bold, color=netgray]
+    (client) -- node[etiquette, above]{1. DNS} (dns);
+
+  \draw[fleche-bold, color=tlsgreen]
+    (dns.east) to[bend left=8]
+    node[etiquette, above, text=tlsgreen]{2. HTTPS \texttt{:443}}
+    (sg.west);
+
+  \draw[fleche-bold, color=tlsgreen, dashed]
+    (client.south) to[bend right=22]
+    node[etiquette, below, text=tlsgreen]{réponse chiffrée TLS}
+    (sg.south west);
+
+  % Légende des ports SG
+  \node[legendebox, anchor=north west, font=\tiny,
+        align=left, fill=accentred!5, draw=accentred]
+    at ([xshift=2mm,yshift=-2mm]sg.north west)
+    {\textbf{Ports ouverts}\\
+     22/tcp \, 80/tcp \, 443/tcp\\
+     source : \texttt{0.0.0.0/0}};
+
+\end{tikzpicture}
+\end{document}

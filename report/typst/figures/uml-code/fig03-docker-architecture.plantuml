@@ -1,0 +1,46 @@
+@startuml
+' Figure 03 — Architecture Docker (Improved Spacing)
+
+' Force the layout engine to give more room
+skinparam nodesep 80
+skinparam ranksep 80
+skinparam roundcorner 10
+skinparam shadowing false
+' Ortho is great, but "polyline" often handles crowded labels better
+skinparam linetype polyline
+
+title Figure 03 — Architecture Docker
+
+node "Hôte EC2 — Ubuntu 22.04" as Host #GhostWhite {
+
+    rectangle "Docker Compose stack" as Stack #AliceBlue {
+
+        ' Using a vertical layout for containers to avoid horizontal overlap
+        rectangle "Conteneurs" as Containers {
+            component "<b>nginx</b>\n--\nnginx:1.25-alpine\nReverse proxy + TLS\nPorts: 80:80, 443:443" as Nginx #HoneyDew
+            component "<b>app</b>\n--\npython:3.11-slim\nFlask 3 + Gunicorn\nPort: 5000 (interne)" as App #WhiteSmoke
+            component "<b>db</b>\n--\npostgres:15-alpine\nBase de données\nPort: 5432 (interne)" as DB #AliceBlue
+        }
+
+        boundary "Docker bridge network\nwebcyber-net" as Network #LightGray
+        queue "Volumes nommés\ndb-data, certbot-etc" as Volumes #Cornsilk
+    }
+}
+
+' External Traffic
+cloud "Internet" as Internet
+Internet -down-> Nginx : :80/:443
+
+' Clearer spacing for connections
+Nginx <--> Network
+App <--> Network
+DB <--> Network
+
+' Placing these labels on separate lines to avoid collision
+Nginx -[#blue]right-> App : http://app:5000
+App -[#blue]right-> DB : db:5432
+
+DB .down.> Volumes : storage
+Nginx .down.> Volumes : certs
+
+@enduml

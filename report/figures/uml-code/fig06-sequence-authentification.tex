@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    actor U as Utilisateur
+    participant B as Navigateur
+    participant N as Nginx
+    participant F as Flask
+    participant D as PostgreSQL
+
+    U->>B: Saisit login + password
+    B->>N: POST /login (HTTPS)
+    activate N
+    N->>F: proxy_pass http://app:5000
+    activate F
+    
+    Note over F: Validation CSRF + form
+    
+    F->>D: SELECT * FROM users WHERE username=?
+    activate D
+    D-->>F: tuple user (id, password_hash)
+    deactivate D
+    
+    Note over F: check_password_hash()
+    
+    F-->>N: 302 + Set-Cookie: session=... (Secure)
+    deactivate F
+    N-->>B: Réponse HTTPS
+    deactivate N
+    B-->>U: Redirection /notes
+
+    Note over U, D: <b>Notes de sécurité :</b><br/>• Mot de passe haché (Werkzeug PBKDF2-SHA256)<br/>• Cookie signé (HMAC) avec flags Secure & HttpOnly

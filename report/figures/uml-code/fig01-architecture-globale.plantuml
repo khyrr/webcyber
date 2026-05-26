@@ -1,0 +1,51 @@
+@startuml
+@startuml
+' Figure 01 — Architecture globale
+
+skinparam roundcorner 15
+skinparam shadowing false
+skinparam linetype ortho
+
+title Figure 01 — Architecture globale
+
+actor "Navigateur Web\n(Utilisateur final)" as User #LightGray
+
+node "Route 53\nwebcyber.app" as DNS #AntiqueWhite
+
+cloud "AWS Cloud — eu-west-3 (Paris)" as AWS {
+    
+    frame "VPC 10.0.0.0/16" as VPC #GhostWhite {
+        
+        frame "Security Group\nwebcyber-sg" as SG #LavenderBlush {
+            
+            node "EC2 t2.micro\nUbuntu 22.04" as EC2 #OldLace {
+                
+                label "Elastic IP" as EIP #Orange
+                
+                rectangle "Docker Compose" as Docker #AliceBlue {
+                    stack "Nginx" as Nginx #HoneyDew
+                    stack "Flask" as App #WhiteSmoke
+                    database "Postgres" as DB #LightCyan
+                }
+            }
+        }
+    }
+}
+
+' Interactions
+User -right-> DNS : 1. DNS
+DNS -right-> SG : 2. HTTPS :443
+SG --> Nginx
+Nginx -right-> App
+App -right-> DB
+
+' The return response
+SG .[#green].> User : réponse chiffrée TLS
+
+legend top left
+  <b>Ports ouverts (SG)</b>
+  22/tcp, 80/tcp, 443/tcp
+  Source: 0.0.0.0/0
+end legend
+
+@enduml

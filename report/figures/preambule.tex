@@ -1,0 +1,100 @@
+% Préambule commun pour tous les diagrammes TikZ standalone
+% À inclure via \input{preambule.tex} après \documentclass{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+\usetikzlibrary{
+  arrows.meta,
+  positioning,
+  shapes.geometric,
+  shapes.symbols,
+  shapes.misc,
+  fit,
+  calc,
+  backgrounds,
+  decorations.pathreplacing,
+  decorations.markings,
+  shadows.blur,
+  patterns
+}
+
+% Palette de couleurs (cohérente sur tout le rapport)
+\definecolor{awsorange}{HTML}{FF9900}
+\definecolor{awsdark}{HTML}{232F3E}
+\definecolor{awsblue}{HTML}{1A476F}
+\definecolor{dockerblue}{HTML}{2496ED}
+\definecolor{dockerdark}{HTML}{0DB7ED}
+\definecolor{nginxgreen}{HTML}{009639}
+\definecolor{flaskgray}{HTML}{3776AB}
+\definecolor{pgblue}{HTML}{336791}
+\definecolor{tlsgreen}{HTML}{2E8B57}
+\definecolor{netgray}{HTML}{6C757D}
+\definecolor{bgsoft}{HTML}{F5F7FA}
+\definecolor{bordersoft}{HTML}{C8D1DC}
+\definecolor{textdark}{HTML}{1F2937}
+\definecolor{accentred}{HTML}{C0392B}
+\definecolor{accentyellow}{HTML}{F1C40F}
+
+% Styles génériques réutilisés dans plusieurs diagrammes
+\tikzset{
+  base/.style={
+    rounded corners=4pt,
+    draw=bordersoft,
+    fill=white,
+    text=textdark,
+    align=center,
+    inner sep=6pt,
+    font=\small
+  },
+  zone/.style={
+    base,
+    fill=bgsoft,
+    draw=netgray,
+    dashed,
+    inner sep=12pt
+  },
+  cloud/.style={
+    base,
+    fill=awsdark!5,
+    draw=awsorange,
+    line width=0.8pt,
+    inner sep=14pt
+  },
+  service/.style={
+    base,
+    line width=0.6pt,
+    minimum width=2.6cm,
+    minimum height=1.1cm,
+    drop shadow={shadow xshift=1pt, shadow yshift=-1pt, opacity=0.2}
+  },
+  legendebox/.style={
+    base,
+    fill=white,
+    font=\footnotesize,
+    inner sep=4pt
+  },
+  fleche/.style={
+    -{Latex[length=2.5mm,width=2mm]},
+    line width=0.6pt,
+    color=netgray
+  },
+  fleche-bidir/.style={
+    {Latex[length=2.5mm,width=2mm]}-{Latex[length=2.5mm,width=2mm]},
+    line width=0.6pt,
+    color=netgray
+  },
+  fleche-bold/.style={
+    -{Latex[length=3mm,width=2.4mm]},
+    line width=1pt
+  },
+  etiquette/.style={
+    font=\scriptsize\sffamily,
+    fill=white,
+    inner sep=2pt,
+    text=textdark
+  }
+}

@@ -1,0 +1,61 @@
+@startuml
+' Figure 04 — Diagramme de cas d'utilisation UML (Vertical for Reports)
+
+' Visual settings
+skinparam actorStyle stickman
+skinparam packageStyle rectangle
+skinparam shadowing false
+' Default is Top-to-Bottom, which is better for portrait pages
+
+skinparam usecase {
+    BackgroundColor #F0F7FF
+    BorderColor #232F3E
+    ArrowColor #2C3E50
+}
+
+' Actors at the top and/or bottom
+actor "Visiteur" as Visiteur
+actor "Utilisateur\nauthentifié" as User
+
+rectangle "Système — WebCyber Notes" {
+    
+    ' Top section: Authentication
+    rectangle "Authentification" #Line.dashed {
+        (S'inscrire) as Register
+        (Se connecter) as Login
+        (Se déconnecter) as Logout
+    }
+    
+    ' Middle section: Features (Organized in two columns)
+    (Créer une note) as Create
+    (Éditer une note) as Edit
+    (Consulter ses notes) as Read
+    (Supprimer une note) as Delete
+    (Rechercher une note) as Search
+    (Archiver / désarchiver) as Archive
+    (Corbeille + restauration) as Trash
+    
+    ' Layout alignment (invisible links to force columns)
+    Create -[hidden]right- Read
+    Edit -[hidden]right- Delete
+    Search -[hidden]right- Archive
+    
+    ' Relationships: Includes
+    Create ..> Login : <<include>>
+    Edit ..> Login : <<include>>
+}
+
+' Connections
+Visiteur -- Register
+Visiteur -- Login
+
+User -- Logout
+User -- Create
+User -- Read
+User -- Edit
+User -- Delete
+User -- Search
+User -- Archive
+User -- Trash
+
+@enduml

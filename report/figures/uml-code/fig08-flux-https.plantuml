@@ -1,0 +1,80 @@
+@startuml
+' Figure 08 — Flux d'une requête HTTPS (Version Corrigée)
+
+hide footbox
+skinparam shadowing false
+skinparam monochrome false
+' Ortho is great, but "polyline" often handles overlapping text better in tight flows
+skinparam linetype polyline
+
+' Spacing to prevent overlap
+skinparam ranksep 150
+skinparam nodesep 80
+
+' Style adjustments for clarity
+skinparam note {
+    BackgroundColor #FEFFEC
+    BorderColor #BDB76B
+    FontSize 11
+}
+
+' Definition of actors/nodes
+node "Client" as Client #F9F9F9 {
+    artifact "Navigateur" as Browser
+}
+
+node "Nginx" as Nginx #E1F5FE {
+    artifact "Reverse Proxy\nTLS Termination" as NginxSvc
+}
+
+node "App Container" as App #F5F5F5 {
+    artifact "Flask\nGunicorn :5000" as Flask
+}
+
+database "PostgreSQL" as DB #E8EAF6 {
+    artifact "Données :5432" as PGSvc
+}
+
+' Flow and Connections
+' --- HTTPS ZONE ---
+Client -[#green,bold]> Nginx : "**HTTPS :443**\n(TLS 1.3 chiffré)"
+Nginx -[#green,dashed]> Client : "réponse\nchiffrée"
+
+' --- INTERNAL ZONE ---
+Nginx -[#red,bold]> App : "**HTTP :5000**\n(réseau Docker)"
+App -[#red,dashed]> Nginx : "HTML\nrendu"
+
+' --- DB ZONE ---
+App -[#blue,bold]> DB : "**TCP :5432**\n(SQLAlchemy)"
+DB -[#blue,dashed]> App : "ResultSet"
+
+' Summary details via notes
+note bottom of Client
+  **Sécurité Client**
+  • Certificat validé
+  • Cookie HttpOnly
+  • HSTS appliqué
+end note
+
+note bottom of Nginx
+  **Sécurité Nginx**
+  • Let's Encrypt TLS
+  • Security Headers
+  • Rate Limiting
+end note
+
+note bottom of App
+  **Sécurité Flask**
+  • Auth & CSRF
+  • Jinja2 Escape
+  • WTForms
+end note
+
+note bottom of DB
+  **Sécurité Database**
+  • Paramétrage SQL
+  • Isolation user_id
+  • Pas d'accès ext.
+end note
+
+@enduml

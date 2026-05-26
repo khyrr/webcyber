@@ -1,0 +1,90 @@
+% Figure 03 — Architecture Docker
+% Stack Docker Compose : nginx + app + db + bridge network + volumes
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[node distance=8mm]
+
+  % --- Hôte EC2 (englobant) ---
+  \node[zone, fill=awsdark!5, draw=awsdark, line width=0.7pt,
+        minimum width=15cm, minimum height=10cm,
+        label={[font=\small\bfseries, text=awsdark]north:Hôte EC2 — Ubuntu 22.04 — Docker Engine 24.x}]
+    (host) {};
+
+  % --- Stack Docker Compose ---
+  \node[zone, fill=dockerblue!5, draw=dockerblue, line width=0.7pt,
+        minimum width=13.5cm, minimum height=8cm,
+        label={[font=\small\bfseries, text=dockerblue]north:Docker Compose stack — \texttt{docker-compose.yml}}]
+    at ([yshift=-5mm]host.center) (stack) {};
+
+  % --- Conteneur Nginx ---
+  \node[service, fill=nginxgreen!12, draw=nginxgreen,
+        minimum width=3.8cm, minimum height=2.8cm]
+    at ([xshift=-46mm,yshift=8mm]stack.center) (nginx)
+    {\textbf{nginx}\\[1pt]
+     \scriptsize \texttt{nginx:1.25-alpine}\\
+     \scriptsize Reverse proxy \(+\) TLS\\[3pt]
+     \scriptsize Ports publiés :\\
+     \scriptsize \texttt{80:80} \quad \texttt{443:443}};
+
+  % --- Conteneur Flask ---
+  \node[service, fill=flaskgray!15, draw=flaskgray,
+        minimum width=3.8cm, minimum height=2.8cm]
+    at ([xshift=0mm,yshift=8mm]stack.center) (app)
+    {\textbf{app}\\[1pt]
+     \scriptsize \texttt{python:3.11-slim}\\
+     \scriptsize Flask 3 \(+\) Gunicorn\\[3pt]
+     \scriptsize Port interne :\\
+     \scriptsize \texttt{5000} (non publié)};
+
+  % --- Conteneur PostgreSQL ---
+  \node[service, fill=pgblue!18, draw=pgblue,
+        minimum width=3.8cm, minimum height=2.8cm]
+    at ([xshift=46mm,yshift=8mm]stack.center) (db)
+    {\textbf{db}\\[1pt]
+     \scriptsize \texttt{postgres:15-alpine}\\
+     \scriptsize Base de données\\[3pt]
+     \scriptsize Port interne :\\
+     \scriptsize \texttt{5432} (non publié)};
+
+  % --- Réseau bridge ---
+  \node[zone, fill=netgray!10, draw=netgray,
+        minimum width=12cm, minimum height=1.1cm,
+        font=\footnotesize\bfseries,
+        text=netgray]
+    at ([yshift=-12mm]stack.center) (net)
+    {Docker bridge network \texttt{webcyber-net} \quad ($\approx$ \texttt{172.20.0.0/16})};
+
+  % Connexions conteneurs <-> réseau
+  \draw[fleche-bidir, color=netgray] (nginx.south) -- ([xshift=-46mm]net.north);
+  \draw[fleche-bidir, color=netgray] (app.south)   -- (net.north);
+  \draw[fleche-bidir, color=netgray] (db.south)    -- ([xshift=46mm]net.north);
+
+  % Étiquettes de communication interne
+  \node[etiquette, fill=white, draw=netgray, font=\tiny]
+    at ($(nginx.east)!0.5!(app.west)$) {\texttt{http://app:5000}};
+  \node[etiquette, fill=white, draw=netgray, font=\tiny]
+    at ($(app.east)!0.5!(db.west)$) {\texttt{db:5432}};
+
+  % --- Volumes ---
+  \node[base, fill=accentyellow!15, draw=accentyellow!80!black,
+        minimum width=12cm, minimum height=1.4cm, font=\scriptsize, align=left]
+    at ([yshift=-22mm]stack.center) (vols)
+    {\textbf{Volumes nommés :}\quad
+     \texttt{db-data} \(\to\) \texttt{/var/lib/postgresql/data} \quad|\quad
+     \texttt{certbot-etc} \(\to\) \texttt{/etc/letsencrypt} \quad|\quad
+     \texttt{certbot-var} \(\to\) \texttt{/var/lib/letsencrypt}};
+
+  % Lien volume db
+  \draw[fleche, dashed, color=accentyellow!80!black]
+    (db.south east) to[bend left=15] ([xshift=20mm]vols.north);
+
+  % --- Trafic externe entrant (en haut) ---
+  \node[service, fill=netgray!10, draw=netgray,
+        minimum width=2.4cm, minimum height=0.9cm, font=\scriptsize]
+    at ([yshift=22mm]nginx.north) (ext) {Internet \texttt{:80/:443}};
+  \draw[fleche-bold, color=tlsgreen] (ext) -- (nginx.north);
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,106 @@
+% Figure 06 — Diagramme de séquence : Authentification
+% Acteurs : User, Browser, Nginx, Flask, PostgreSQL
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[
+  acteur/.style={
+    base, fill=awsblue!10, draw=awsblue, line width=0.6pt,
+    minimum width=2.4cm, minimum height=0.8cm,
+    font=\small\bfseries
+  },
+  msg/.style={
+    -{Latex[length=2mm]}, line width=0.6pt, color=textdark
+  },
+  msg-ret/.style={
+    -{Latex[length=2mm]}, dashed, line width=0.6pt, color=netgray
+  },
+  activation/.style={
+    fill=awsorange!40, draw=awsorange, line width=0.4pt
+  },
+  note/.style={
+    base, fill=accentyellow!15, draw=accentyellow!80!black,
+    font=\scriptsize, align=left, inner sep=3pt
+  }
+]
+
+  % Positions horizontales des lignes de vie
+  \def\xUser{0}
+  \def\xBrowser{3.2}
+  \def\xNginx{6.4}
+  \def\xFlask{9.6}
+  \def\xDB{12.8}
+
+  % Acteurs
+  \node[acteur] (user)    at (\xUser,    0) {Utilisateur};
+  \node[acteur] (browser) at (\xBrowser, 0) {Navigateur};
+  \node[acteur] (nginx)   at (\xNginx,   0) {Nginx};
+  \node[acteur] (flask)   at (\xFlask,   0) {Flask};
+  \node[acteur] (db)      at (\xDB,      0) {PostgreSQL};
+
+  % Lignes de vie (pointillées)
+  \def\bottom{-12.5}
+  \foreach \x/\name in {\xUser/user, \xBrowser/browser, \xNginx/nginx, \xFlask/flask, \xDB/db} {
+    \draw[dashed, color=netgray] (\x, -0.4) -- (\x, \bottom);
+  }
+
+  % --- Étape 1 : saisie identifiants ---
+  \draw[msg] (\xUser, -1.0) -- node[etiquette, above]{1. Saisit login + password}
+    (\xBrowser, -1.0);
+
+  % --- Étape 2 : POST /login ---
+  \draw[msg] (\xBrowser, -2.0) -- node[etiquette, above]{2. POST \texttt{/login} (HTTPS)}
+    (\xNginx, -2.0);
+
+  % Activation Nginx
+  \fill[activation] (\xNginx-0.1, -2.0) rectangle (\xNginx+0.1, -10.0);
+
+  % --- Étape 3 : Terminaison TLS + proxy_pass ---
+  \draw[msg] (\xNginx, -2.8) -- node[etiquette, above]{3. proxy\_pass \texttt{http://app:5000}}
+    (\xFlask, -2.8);
+
+  % Activation Flask
+  \fill[activation] (\xFlask-0.1, -2.8) rectangle (\xFlask+0.1, -9.2);
+
+  % --- Étape 4 : CSRF token check ---
+  \draw[msg] (\xFlask, -3.6) to[bend left=90, looseness=4]
+    node[etiquette, right, xshift=2mm]{4. Validation CSRF + form}
+    (\xFlask, -4.2);
+
+  % --- Étape 5 : SELECT user ---
+  \draw[msg] (\xFlask, -5.0) -- node[etiquette, above]{5. \texttt{SELECT * FROM users WHERE username=?}}
+    (\xDB, -5.0);
+
+  % Activation DB
+  \fill[activation] (\xDB-0.1, -5.0) rectangle (\xDB+0.1, -6.2);
+
+  % --- Étape 6 : retour user record ---
+  \draw[msg-ret] (\xDB, -6.0) -- node[etiquette, above, text=netgray]{6. tuple user (id, password\_hash)}
+    (\xFlask, -6.0);
+
+  % --- Étape 7 : check_password (bcrypt) ---
+  \draw[msg] (\xFlask, -7.0) to[bend left=90, looseness=4]
+    node[etiquette, right, xshift=2mm]{7. \texttt{check\_password\_hash()}}
+    (\xFlask, -7.6);
+
+  % --- Étape 8 : Set-Cookie session ---
+  \draw[msg-ret] (\xFlask, -8.4) -- node[etiquette, above, text=tlsgreen]{8. 302 + \texttt{Set-Cookie: session=...} (HttpOnly, Secure)}
+    (\xNginx, -8.4);
+
+  \draw[msg-ret] (\xNginx, -9.2) -- node[etiquette, above, text=tlsgreen]{9. réponse HTTPS}
+    (\xBrowser, -9.2);
+
+  \draw[msg-ret] (\xBrowser, -10.0) -- node[etiquette, above]{10. Redirection \texttt{/notes}}
+    (\xUser, -10.0);
+
+  % --- Note de sécurité ---
+  \node[note, anchor=north west, text width=10cm]
+    at (1.5, -11.0)
+    {\textbf{Notes de sécurité :}\\
+     \(\bullet\) Le mot de passe ne quitte jamais le serveur en clair (HTTPS de bout en bout).\\
+     \(\bullet\) Hachage \texttt{Werkzeug PBKDF2-SHA256} avec sel automatique.\\
+     \(\bullet\) Cookie de session signé (HMAC) avec \texttt{SECRET\_KEY} et flags \texttt{Secure}, \texttt{HttpOnly}, \texttt{SameSite=Lax}.};
+
+\end{tikzpicture}
+\end{document}

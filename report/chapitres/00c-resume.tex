@@ -1,0 +1,70 @@
+\chapter*{Résumé}
+\thispagestyle{empty}
+
+Ce projet de fin d'études porte sur la conception, le développement,
+le déploiement et l'analyse de sécurité d'une application web de prise
+de notes personnelle, baptisée \textbf{WebCyber}. L'application repose
+sur le \emph{framework} Python \textbf{Flask} pour la couche métier,
+sur \textbf{PostgreSQL} pour la persistance des données, et sur
+\textbf{Nginx} comme proxy inverse assurant la terminaison TLS.
+L'ensemble est \textbf{conteneurisé} avec Docker et orchestré via Docker
+Compose, puis \textbf{déployé sur AWS} (instance EC2 \texttt{t2.micro}
+sous Ubuntu Server 22.04 LTS), avec une résolution de nom de domaine
+gérée par \textbf{Route\,53} et un certificat HTTPS automatique fourni
+par \textbf{Let's Encrypt}.
+
+\vspace{0.4em}
+
+Une attention particulière a été portée à la sécurité, organisée
+en \textbf{six couches} : pare-feu réseau (\emph{Security Group} AWS),
+durcissement du système, isolation Docker, configuration TLS et
+en-têtes de sécurité Nginx, contrôles applicatifs (authentification,
+hachage \texttt{PBKDF2-SHA256}, protection CSRF, validation des
+entrées, isolation des données par utilisateur) et sécurité de la
+base de données. La solution déployée a ensuite été soumise à une
+campagne d'évaluation à l'aide de \textbf{Nmap}, \textbf{Nikto} et
+\textbf{testssl.sh}, dont les résultats sont analysés et discutés.
+
+\vspace{0.4em}
+
+\textbf{Mots-clés :} application web, sécurité, cybersécurité, AWS,
+EC2, Docker, conteneurs, Nginx, Flask, PostgreSQL, HTTPS, TLS,
+Let's Encrypt, Nmap, Nikto, défense en profondeur, DevOps.
+
+\vspace{1.5em}
+
+\begin{center}
+\noindent\rule{0.6\linewidth}{0.4pt}
+\end{center}
+
+\vspace{0.8em}
+
+\section*{Abstract}
+
+This end-of-studies project covers the design, development, deployment
+and security assessment of a personal note-taking web application named
+\textbf{WebCyber}. The application is built on the Python
+\textbf{Flask} framework for business logic, \textbf{PostgreSQL} for
+data persistence, and \textbf{Nginx} as a reverse proxy handling TLS
+termination. The whole stack is \textbf{containerised} with Docker and
+orchestrated through Docker Compose, then \textbf{deployed on AWS}
+(EC2 \texttt{t2.micro} instance running Ubuntu Server 22.04 LTS), with
+DNS resolution provided by \textbf{Route\,53} and HTTPS certificates
+automatically issued by \textbf{Let's Encrypt}.
+
+\vspace{0.4em}
+
+Security has been treated as a first-class concern and structured into
+\textbf{six layers}: AWS Security Group network firewall, host
+hardening, Docker isolation, Nginx TLS and security headers,
+application-level controls (authentication, \texttt{PBKDF2-SHA256}
+password hashing, CSRF protection, input validation, per-user data
+isolation) and database security. The deployed solution was then
+assessed using \textbf{Nmap}, \textbf{Nikto} and \textbf{testssl.sh},
+and the results are analysed and discussed.
+
+\vspace{0.4em}
+
+\textbf{Keywords:} web application, security, cybersecurity, AWS, EC2,
+Docker, containers, Nginx, Flask, PostgreSQL, HTTPS, TLS, Let's Encrypt,
+Nmap, Nikto, defense-in-depth, DevOps.

@@ -1,0 +1,260 @@
+% ==============================================================================
+% ISCAE PFE — Rapport de fin d'études
+% Sujet : WebCyber — Conception, déploiement et analyse de sécurité
+%         d'une application web sur AWS via la conteneurisation Docker
+%
+% Compilation : XeLaTeX ou LuaLaTeX (Times New Roman via fontspec)
+%               sur Overleaf, choisir XeLaTeX dans les paramètres du projet.
+% ==============================================================================
+\documentclass[12pt,a4paper]{report}
+
+% ---------- Polices et typographie ----------
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---------- Langue ----------
+\usepackage[french]{babel}
+
+% ---------- Mise en page et graphiques ----------
+\usepackage{geometry}
+\geometry{left=2.2cm,right=2.2cm,top=2.2cm,bottom=2.2cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{standalone}      % permet \input des diagrammes standalone
+
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+
+% ---------- Citations ----------
+\usepackage{cite}
+
+% ---------- Tableaux ----------
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{ragged2e}
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}m{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}m{#1}}
+
+% ---------- Code source ----------
+\usepackage{listings}
+\definecolor{codebg}{RGB}{248,249,250}
+\definecolor{codecomment}{RGB}{106,153,85}
+\definecolor{codekeyword}{RGB}{0,102,153}
+\definecolor{codestring}{RGB}{163,21,21}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  commentstyle=\color{codecomment}\itshape,
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  frame=single,
+  rulecolor=\color{lightgray},
+  framesep=4pt,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b,
+  literate={é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1
+           {ç}{{\c{c}}}1 {ô}{{\^o}}1 {î}{{\^\i}}1 {ï}{{\"\i}}1
+           {ù}{{\`u}}1 {É}{{\'E}}1 {È}{{\`E}}1 {À}{{\`A}}1
+}
+
+% ---------- Titres ----------
+\usepackage{titlesec}
+
+% ---------- Couleurs ----------
+\definecolor{iscaeblue}{RGB}{0,102,153}
+\definecolor{lightgray}{RGB}{245,245,245}
+
+% ==============================================================================
+% MÉTADONNÉES — à modifier pour chaque projet
+% ==============================================================================
+\newcommand{\Institute}{Institut Supérieur de Comptabilité et d'Administration des Entreprises}
+\newcommand{\Location}{Nouakchott --- Mauritanie}
+\newcommand{\LogoFile}{logo-iscae.png}
+
+% Étudiant (un seul auteur sur ce projet)
+\newcommand{\studentA}{Mohamed Salem KHYARHOUM --- I19xxx}
+
+\newcommand{\supervisor}{Nom de l'encadreur}
+\newcommand{\company}{ISCAE Nouakchott}
+\newcommand{\academicYear}{2025--2026}
+\newcommand{\projectTitle}{Conception, déploiement et analyse de sécurité d'une application web hébergée sur AWS via la conteneurisation Docker}
+\newcommand{\projectType}{PROJET DE FIN D'ÉTUDES}
+\newcommand{\degree}{LICENCE en Développement Informatique}
+
+% ==============================================================================
+% Hyperliens
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue,
+  urlcolor=blue,
+  pdftitle={\projectTitle},
+  pdfauthor={\studentA}
+}
+
+% ==============================================================================
+% Redéfinition des chapitres (page de garde par chapitre)
+\makeatletter
+\let\OldChapter\chapter
+
+\newcommand{\MyChapterPage}[2]{%
+  \clearpage
+  \thispagestyle{empty}
+  \begin{center}
+    \vspace*{0.30\textheight}
+    {\Huge\bfseries Chapitre\ \ #1\\[1.5ex] #2}
+  \end{center}
+  \clearpage
+}
+
+\def\MyChapter#1{%
+  \refstepcounter{chapter}%
+  \phantomsection
+  \addcontentsline{toc}{chapter}{\protect\numberline{\thechapter}#1}%
+  \markboth{#1}{#1}%
+  \MyChapterPage{\thechapter}{#1}%
+}
+
+\def\MyChapterStar#1{%
+  \clearpage
+  \thispagestyle{plain}%
+  \OldChapter*{#1}%
+  \addcontentsline{toc}{chapter}{#1}%
+}
+
+\renewcommand{\chapter}{\@ifstar{\MyChapterStar}{\MyChapter}}
+\makeatother
+
+% ==============================================================================
+% DÉBUT DU DOCUMENT
+% ==============================================================================
+\begin{document}
+
+\pagenumbering{roman}
+\pagestyle{plain}
+
+% ---------------- Page de garde ----------------
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture,overlay]
+\draw[line width=2pt,color=iscaeblue]
+    ([xshift=1cm,yshift=-1cm]current page.north west)
+    rectangle
+    ([xshift=-1cm,yshift=1cm]current page.south east);
+\draw[line width=0.8pt,color=iscaeblue]
+    ([xshift=1.2cm,yshift=-1.2cm]current page.north west)
+    rectangle
+    ([xshift=-1.2cm,yshift=1.2cm]current page.south east);
+\end{tikzpicture}
+
+\begin{center}
+
+{\large \textbf{\Institute}}\\[0.2cm]
+{\itshape \Location}
+
+\vspace{0.8cm}
+
+\IfFileExists{\LogoFile}{\includegraphics[width=3cm]{\LogoFile}}{%
+  \fbox{\parbox[c][3cm][c]{3cm}{\centering\itshape\small Logo ISCAE\\(à insérer)}}%
+}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
+
+{\Large \bfseries\colorbox{yellow}{\projectType}}
+
+\vspace{0.5cm}
+
+Pour l'obtention de :\\[0.2cm]
+{\large \bfseries\colorbox{yellow}{\degree}}
+
+\vspace{0.8cm}
+
+\textbf{Thème :}
+
+\vspace{0.4cm}
+
+\fbox{\parbox{0.98\linewidth}{\centering\fontsize{11}{12}\selectfont\textbf{\projectTitle}}}
+
+\vspace{1cm}
+
+\begin{flushleft}
+\textit{Élaboré par :}
+\end{flushleft}
+
+\begin{center}
+\colorbox{yellow}{\studentA}\\[0.2cm]
+\end{center}
+
+\vspace{0.8cm}
+
+\begin{flushleft}
+\textit{Encadré par :}
+\end{flushleft}
+
+\begin{center}
+\colorbox{yellow}{\supervisor}
+\end{center}
+
+\vfill
+
+{\itshape Année Universitaire : \academicYear}
+
+\end{center}
+\end{titlepage}
+
+% ---------------- Pages liminaires ----------------
+\include{chapitres/00a-dedicaces}
+\include{chapitres/00b-remerciements}
+\include{chapitres/00c-resume}
+
+% ---------------- Tables ----------------
+\renewcommand{\contentsname}{Table des matières}
+\tableofcontents
+\clearpage
+
+\renewcommand{\listfigurename}{Liste des figures}
+\listoffigures
+\clearpage
+
+\renewcommand{\listtablename}{Liste des tableaux}
+\listoftables
+\clearpage
+
+% ---------------- Acronymes ----------------
+\include{chapitres/00d-acronymes}
+
+% ---------------- Corps du rapport ----------------
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\include{chapitres/00e-introduction}
+\include{chapitres/01-contexte}
+\include{chapitres/02-besoins}
+\include{chapitres/03-conception}
+\include{chapitres/04-realisation}
+\include{chapitres/05-tests}
+\include{chapitres/06-conclusion}
+
+% ---------------- Bibliographie / Webographie ----------------
+\include{chapitres/07-bibliographie}
+
+\end{document}

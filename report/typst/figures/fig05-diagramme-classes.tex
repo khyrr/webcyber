@@ -1,0 +1,70 @@
+% Figure 05 — Diagramme de classes (modèle de données)
+% Classes User et Note avec relation 1..*
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[
+  classe/.style={
+    rectangle split, rectangle split parts=3,
+    rectangle split part fill={awsblue!20, white, white},
+    draw=awsblue, line width=0.7pt,
+    text=textdark, align=left, font=\footnotesize,
+    rounded corners=2pt,
+    rectangle split draw splits=true,
+    inner sep=4pt
+  },
+  attribute/.style={font=\footnotesize, anchor=west},
+  relation/.style={
+    -{Latex[length=2.5mm,width=2mm]},
+    line width=0.7pt, color=textdark
+  }
+]
+
+  % --- Classe User ---
+  \node[classe] (user) {%
+    \textbf{\large User}
+    \nodepart{second}
+    \(-\) id : Integer \, \{PK, auto\}\\
+    \(-\) username : String(80) \, \{unique, not null\}\\
+    \(-\) email : String(120) \, \{unique, not null\}\\
+    \(-\) password\_hash : String(256) \, \{not null\}\\
+    \(-\) created\_at : DateTime \, \{default = now()\}
+    \nodepart{third}
+    \(+\) check\_password(pw) : bool\\
+    \(+\) set\_password(pw) : void\\
+    \(+\) get\_id() : str
+  };
+
+  % --- Classe Note ---
+  \node[classe, right=4.5cm of user] (note) {%
+    \textbf{\large Note}
+    \nodepart{second}
+    \(-\) id : Integer \, \{PK, auto\}\\
+    \(-\) title : String(200) \, \{not null\}\\
+    \(-\) content : Text \, \{not null\}\\
+    \(-\) user\_id : Integer \, \{FK \(\to\) User.id, not null\}\\
+    \(-\) is\_archived : Boolean \, \{default = false\}\\
+    \(-\) is\_trashed : Boolean \, \{default = false\}\\
+    \(-\) created\_at : DateTime \, \{default = now()\}\\
+    \(-\) updated\_at : DateTime \, \{on update = now()\}
+    \nodepart{third}
+    \(+\) archive() : void\\
+    \(+\) restore() : void\\
+    \(+\) move\_to\_trash() : void
+  };
+
+  % --- Relation 1..* ---
+  \draw[relation] (user.east) -- (note.west)
+    node[etiquette, midway, above, font=\footnotesize]{possède}
+    node[etiquette, near start, below, font=\footnotesize]{1}
+    node[etiquette, near end,   below, font=\footnotesize]{0..\(n\)};
+
+  % --- Stéréotype <<entity>> ---
+  \node[font=\scriptsize\itshape, text=netgray, anchor=south]
+    at ([yshift=2pt]user.north) {\guillemotleft\,entity\,\guillemotright};
+  \node[font=\scriptsize\itshape, text=netgray, anchor=south]
+    at ([yshift=2pt]note.north) {\guillemotleft\,entity\,\guillemotright};
+
+\end{tikzpicture}
+\end{document}

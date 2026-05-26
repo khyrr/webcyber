@@ -1,0 +1,107 @@
+% Figure 08 — Flux d'une requête HTTPS
+% Client -> Nginx (TLS termination) -> Flask -> DB
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\begin{document}
+\begin{tikzpicture}[node distance=11mm,
+  step/.style={
+    base, line width=0.6pt,
+    minimum width=3.4cm, minimum height=1.4cm,
+    font=\footnotesize, align=center
+  },
+  flux/.style={
+    -{Latex[length=3mm,width=2.4mm]}, line width=1pt
+  },
+  fluxret/.style={
+    -{Latex[length=3mm,width=2.4mm]}, dashed, line width=0.8pt,
+    color=netgray
+  }
+]
+
+  % --- Acteurs (alignés horizontalement) ---
+  \node[step, fill=netgray!12, draw=netgray]              (client) {\textbf{Client}\\\scriptsize Navigateur};
+  \node[step, fill=nginxgreen!12, draw=nginxgreen, right=18mm of client] (nginx)  {\textbf{Nginx}\\\scriptsize Reverse proxy\\\scriptsize TLS termination};
+  \node[step, fill=flaskgray!15, draw=flaskgray, right=18mm of nginx]   (flask)  {\textbf{Flask}\\\scriptsize Gunicorn :5000};
+  \node[step, fill=pgblue!18, draw=pgblue, right=18mm of flask]         (db)     {\textbf{PostgreSQL}\\\scriptsize :5432};
+
+  % --- Étiquettes des liens (couleurs : chiffré vs en clair) ---
+  % 1. Client -> Nginx : HTTPS
+  \draw[flux, color=tlsgreen]
+    ([yshift=4mm]client.east) -- node[etiquette, above, text=tlsgreen]
+      {\textbf{HTTPS} \texttt{:443}\\(TLS 1.3 — chiffré)}
+    ([yshift=4mm]nginx.west);
+
+  % Réponse
+  \draw[fluxret, color=tlsgreen]
+    ([yshift=-4mm]nginx.west) -- node[etiquette, below, text=tlsgreen]
+      {réponse chiffrée TLS}
+    ([yshift=-4mm]client.east);
+
+  % 2. Nginx -> Flask : HTTP interne
+  \draw[flux, color=accentred]
+    ([yshift=4mm]nginx.east) -- node[etiquette, above, text=accentred]
+      {\textbf{HTTP} \texttt{:5000}\\(réseau Docker — clair)}
+    ([yshift=4mm]flask.west);
+
+  \draw[fluxret, color=accentred]
+    ([yshift=-4mm]flask.west) -- node[etiquette, below, text=accentred]
+      {HTML rendu}
+    ([yshift=-4mm]nginx.east);
+
+  % 3. Flask -> DB : PostgreSQL
+  \draw[flux, color=pgblue]
+    ([yshift=4mm]flask.east) -- node[etiquette, above, text=pgblue]
+      {\textbf{TCP} \texttt{:5432}\\(SQLAlchemy)}
+    ([yshift=4mm]db.west);
+
+  \draw[fluxret, color=pgblue]
+    ([yshift=-4mm]db.west) -- node[etiquette, below, text=pgblue]
+      {ResultSet}
+    ([yshift=-4mm]flask.east);
+
+  % --- Bandeau du bas : ce que fait chaque maillon ---
+  \node[base, fill=tlsgreen!8, draw=tlsgreen, font=\scriptsize, text width=3.4cm,
+        below=18mm of client, align=left]
+    (cli-detail)
+    {\textbf{\color{tlsgreen}Client}\\
+     \(\bullet\) Vérifie le certificat\\
+     \(\bullet\) Stocke le cookie de session\\
+     \(\bullet\) HSTS appliqué};
+
+  \node[base, fill=nginxgreen!8, draw=nginxgreen, font=\scriptsize,
+        text width=3.4cm, below=18mm of nginx, align=left]
+    (ng-detail)
+    {\textbf{\color{nginxgreen}Nginx}\\
+     \(\bullet\) Termine TLS (Let's Encrypt)\\
+     \(\bullet\) Redirige \texttt{:80} \(\to\) \texttt{:443}\\
+     \(\bullet\) En-têtes : HSTS, CSP, X-Frame-Options\\
+     \(\bullet\) Limite le débit};
+
+  \node[base, fill=flaskgray!8, draw=flaskgray, font=\scriptsize,
+        text width=3.4cm, below=18mm of flask, align=left]
+    (fl-detail)
+    {\textbf{\color{flaskgray}Flask}\\
+     \(\bullet\) Auth \(+\) CSRF\\
+     \(\bullet\) Validation des entrées (WTForms)\\
+     \(\bullet\) Logique métier\\
+     \(\bullet\) Templates Jinja2 (auto-escape)};
+
+  \node[base, fill=pgblue!8, draw=pgblue, font=\scriptsize,
+        text width=3.4cm, below=18mm of db, align=left]
+    (db-detail)
+    {\textbf{\color{pgblue}PostgreSQL}\\
+     \(\bullet\) Requêtes paramétrées (ORM)\\
+     \(\bullet\) Filtre \texttt{user\_id}\\
+     \(\bullet\) Pas d'accès externe\\
+     \(\bullet\) Volume persistant};
+
+  % --- Légende ---
+  \node[legendebox, anchor=north west, font=\scriptsize, draw=textdark, align=left]
+    at ([yshift=8mm]client.north west)
+    {\textcolor{tlsgreen}{\rule{8pt}{2pt}} chiffré TLS \quad
+     \textcolor{accentred}{\rule{8pt}{2pt}} clair (réseau Docker isolé) \quad
+     \textcolor{pgblue}{\rule{8pt}{2pt}} TCP base de données};
+
+\end{tikzpicture}
+\end{document}

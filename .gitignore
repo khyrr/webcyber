@@ -170,7 +170,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-report/
+
 
 instance.txt
 

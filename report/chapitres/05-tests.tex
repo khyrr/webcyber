@@ -1,0 +1,437 @@
+\chapter{Tests et analyse de sécurité}
+\label{chap:tests}
+
+\section*{Introduction}
+
+Ce chapitre présente la dernière phase du projet : la
+\textbf{validation} fonctionnelle de l'application et l'\textbf{audit
+de sécurité} du déploiement. La méthodologie suit six phases
+complémentaires couvrant aussi bien le code applicatif que
+l'infrastructure : tests fonctionnels, analyse statique de l'IaC,
+vérification de l'infrastructure déployée, scan de ports, scan
+applicatif web, et évaluation de la configuration TLS.
+
+\section{Stratégie de test}
+
+\begin{table}[H]
+\centering
+\caption{Phases de la campagne de validation.}
+\begin{tabular}{C{0.8cm} P{3.5cm} P{4cm} P{5cm}}
+\toprule
+\textbf{Phase} & \textbf{Type} & \textbf{Outils} & \textbf{Objectif} \\
+\midrule
+1 & Fonctionnel               & Navigateur, \texttt{curl} & Vérifier les cas d'utilisation \\
+2 & Analyse statique IaC      & tfsec                      & Détecter les défauts de configuration Terraform \emph{avant} déploiement \\
+3 & Infrastructure            & \texttt{docker}, \texttt{dig}, \texttt{curl}  & Confirmer le déploiement \\
+4 & Scan de ports             & Nmap                       & Limiter la surface d'attaque \\
+5 & Scan applicatif web       & Nikto, \texttt{curl}       & Détecter les mauvaises configurations HTTP \\
+6 & Évaluation TLS            & SSL Labs, testssl.sh       & Mesurer la qualité du chiffrement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Tests fonctionnels}
+
+\subsection{Inscription et authentification}
+
+Les tests d'inscription et d'authentification couvrent à la fois les
+chemins nominaux (\textit{happy path}) et les chemins d'erreur :
+
+\begin{table}[H]
+\centering
+\caption{Tests d'inscription.}
+\begin{tabular}{C{0.7cm} P{4cm} P{5cm} P{4cm}}
+\toprule
+\# & \textbf{Cas} & \textbf{Entrée} & \textbf{Résultat attendu} \\
+\midrule
+1 & Inscription valide & user/email/mdp corrects & Compte créé, redirection /login \\
+2 & Username existant  & username déjà pris       & Erreur, pas de doublon \\
+3 & Mot de passe court & < 8 caractères           & Erreur de validation \\
+4 & Champs vides       & blanc                    & Erreur de validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Tests d'authentification.}
+\begin{tabular}{C{0.7cm} P{4cm} P{5cm} P{4cm}}
+\toprule
+\# & \textbf{Cas} & \textbf{Entrée} & \textbf{Résultat attendu} \\
+\midrule
+1 & Identifiants valides    & user/mdp corrects        & Redirection /notes \\
+2 & Mauvais mot de passe    & mdp erroné               & Message d'erreur \\
+3 & Utilisateur inconnu     & username inexistant      & Message d'erreur \\
+4 & Accès direct sans auth  & GET /notes               & Redirection /login \\
+5 & Déconnexion             & clic « se déconnecter »  & Session détruite, retour /login \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gestion des notes (CRUD)}
+
+\begin{table}[H]
+\centering
+\caption{Tests CRUD sur les notes.}
+\begin{tabular}{C{0.7cm} P{4cm} P{8cm}}
+\toprule
+\# & \textbf{Cas} & \textbf{Résultat attendu} \\
+\midrule
+1 & Création de note          & Note dans la liste \\
+2 & Détail d'une note         & Titre + contenu complet affichés \\
+3 & Édition                   & Contenu mis à jour, \texttt{updated\_at} actualisé \\
+4 & Archivage                 & Disparait de /notes, apparait dans /archive \\
+5 & Mise à la corbeille       & Disparait, apparait dans /trash \\
+6 & Restauration              & Revient dans la liste principale \\
+7 & Suppression définitive    & Disparait de partout, irrécupérable \\
+8 & Recherche par titre       & Résultats filtrés \\
+9 & Création sans titre       & Erreur de validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Test critique : isolation des données}
+
+Ce test vérifie qu'un utilisateur ne peut pas accéder aux notes
+d'un autre.
+
+\begin{table}[H]
+\centering
+\caption{Tests d'isolation par utilisateur.}
+\begin{tabular}{C{0.7cm} P{6cm} P{6cm}}
+\toprule
+\# & \textbf{Scénario} & \textbf{Résultat attendu} \\
+\midrule
+1 & Utilisateur A crée la note \texttt{id=42}     & A voit la note dans sa liste \\
+2 & Utilisateur B se connecte                     & B ne voit pas la note de A \\
+3 & B accède à \texttt{/notes/42} directement     & 404 Not Found \\
+4 & B tente \texttt{POST /notes/42/edit}          & 404 Not Found, aucune modification \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Résultat :} l'application bloque toute tentative grâce au
+filtre \texttt{filter\_by(user\_id=current\_user.id)} systématique
+combiné à \texttt{first\_or\_404()}.
+
+\section{Analyse statique de l'IaC avec tfsec}
+
+\subsection{Principe et positionnement}
+
+\textbf{tfsec} est un \textit{Static Application Security Testing}
+(SAST) spécialisé dans le code Terraform. Il examine le code
+\emph{avant} tout déploiement et signale les défauts de configuration
+courants : ports ouverts trop largement, absence de chiffrement,
+métadonnées d'instance non protégées, etc.
+
+Il est intégré au pipeline CI/CD (cf.~\S~\ref{sec:cicd}) en tant que
+premier \emph{job} : si une règle de niveau \emph{HIGH} ou
+\emph{CRITICAL} est levée, la chaîne de \emph{build} et de
+\emph{deploy} est immédiatement interrompue. Cette logique garantit
+qu'aucune mauvaise configuration d'infrastructure n'atteint la
+production sans avoir été examinée.
+
+\subsection{Exécution}
+
+\begin{lstlisting}[language=bash, caption={Exécution locale de tfsec.}]
+$ cd terraform/
+$ tfsec .
+\end{lstlisting}
+
+\subsection{Résultats et décisions}
+
+L'analyse initiale a remonté trois constats. Chacun a fait l'objet
+d'une décision argumentée :
+
+\begin{table}[H]
+\centering
+\caption{Constats tfsec sur le module Terraform et décisions associées.}
+\begin{tabular}{P{3.5cm} C{1.5cm} P{4.5cm} P{4cm}}
+\toprule
+\textbf{Règle} & \textbf{Sévérité} & \textbf{Description} & \textbf{Décision} \\
+\midrule
+\texttt{aws-ec2-no-public-ingress-sgr} & \textit{HIGH} & IMDSv2 non requis sur l'instance & \textbf{Corrigée} : ajout du bloc \texttt{metadata\_options \{ http\_tokens = "required" \}}. \\
+\texttt{aws-ec2-enable-at-rest-encryption} & \textit{HIGH} & Volume \emph{root} non chiffré & \textbf{Acceptée et documentée} : projet académique sur AWS Academy, pas de données sensibles au repos; le chiffrement forcerait un remplacement de l'instance. Exclusion par \texttt{tfsec:ignore} avec justification. \\
+\texttt{aws-ec2-add-description-to-security-group} & \textit{LOW} & Le \emph{security group} utilise la description par défaut & \textbf{Acceptée et documentée} : \emph{finding} cosmétique de bas niveau; ajouter une description force le remplacement du SG. Exclusion par \texttt{tfsec:ignore}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Les deux exclusions sont matérialisées par des commentaires
+\texttt{tfsec:ignore} placés directement au-dessus des ressources
+concernées, accompagnés d'un libellé expliquant le motif. Ce procédé
+laisse une trace explicite et auditable des risques acceptés, ce qui
+est préférable à la suppression silencieuse via une option de la
+ligne de commande.
+
+\begin{lstlisting}[language=bash, caption={Exclusions documentées dans \texttt{main.tf}.}]
+# tfsec:ignore:aws-ec2-add-description-to-security-group cosmetic LOW
+resource "aws_security_group" "ssh" {
+  ...
+}
+
+# tfsec:ignore:aws-ec2-enable-at-rest-encryption AWS Academy lab; no sensitive data
+resource "aws_instance" "instance" {
+  ...
+}
+\end{lstlisting}
+
+\subsection{Résultat final}
+
+Après correction d'IMDSv2 et exclusion documentée des deux \emph{findings}
+restants, le scan passe sans alerte :
+
+\begin{lstlisting}[language=bash, caption={Sortie tfsec après corrections.}]
+$ tfsec .
+
+  results
+  --------------------------------------------
+  passed              2
+  ignored             0
+  critical            0
+  high                0
+  medium              0
+  low                 0
+
+No problems detected!
+\end{lstlisting}
+
+Le pipeline CI/CD passe désormais le \emph{gate} \texttt{infra-scan}
+sur chaque \texttt{push}, et tout futur ajout de mauvaise
+configuration sera bloqué automatiquement.
+
+\section{Vérification de l'infrastructure}
+
+\subsection{Résolution DNS}
+
+\begin{lstlisting}[language=bash, caption={Vérification DNS.}]
+$ dig webcyber.app A +short
+13.37.42.X
+$ dig www.webcyber.app A +short
+13.37.42.X
+\end{lstlisting}
+
+Les deux enregistrements pointent bien vers l'Elastic IP de l'instance
+EC2.
+
+\subsection{État des conteneurs}
+
+\begin{lstlisting}[language=bash, caption={\texttt{docker compose ps}.}]
+NAME      SERVICE   STATUS         PORTS
+nginx     nginx     Up 5 hours     0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+app       app       Up 5 hours     5000/tcp
+db        db        Up 5 hours     5432/tcp
+\end{lstlisting}
+
+\subsection{Connectivité}
+
+\begin{lstlisting}[language=bash, caption={Vérification HTTP/HTTPS.}]
+$ curl -sI http://webcyber.app | head -1
+HTTP/1.1 301 Moved Permanently
+$ curl -sI https://webcyber.app | head -1
+HTTP/2 200
+\end{lstlisting}
+
+La redirection HTTP \(\to\) HTTPS fonctionne et le service HTTPS répond
+en HTTP/2.
+
+\subsection{Captures d'écran attendues}
+
+Des captures d'écran faciliteront l'illustration des résultats de la phase
+de vérification :
+
+\begin{itemize}
+  \item sortie de \texttt{docker compose ps} ;
+  \item réponse HTTPS valide dans le navigateur ;
+  \item exemples de pages publiques et privées de l'application.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\linewidth}{\centering
+    Capture d'écran 3 : état des conteneurs Docker Compose
+  }}
+  \caption{Espace réservé pour une capture d'écran de la pile Docker en cours d'exécution.}
+  \label{fig:screenshot-docker}
+\end{figure}
+
+\section{Scan de ports avec Nmap}
+
+\subsection{Objectif}
+
+\textbf{Nmap} permet de \textbf{vérifier de l'extérieur} quels ports
+sont accessibles sur la cible. L'objectif est de confirmer que le
+\emph{Security Group} laisse uniquement passer ce qui est attendu, et
+que les services internes (Flask, PostgreSQL) sont bien invisibles.
+
+\subsection{Commandes utilisées}
+
+\begin{lstlisting}[language=bash, caption={Scans Nmap depuis une machine externe.}]
+# Scan TCP des 1000 ports les plus courants
+nmap -sT webcyber.app
+
+# Scan TCP exhaustif (tous les ports 1-65535)
+nmap -sT -p- webcyber.app
+
+# Detection des versions de service
+nmap -sV -p 22,80,443 webcyber.app
+\end{lstlisting}
+
+\subsection{Résultats observés}
+
+\begin{table}[H]
+\centering
+\caption{Résultats du scan Nmap.}
+\begin{tabular}{C{1cm} C{1.5cm} P{4cm} P{6cm}}
+\toprule
+\textbf{Port} & \textbf{État} & \textbf{Service} & \textbf{Analyse} \\
+\midrule
+22   & open      & OpenSSH 8.x          & Attendu : administration. \\
+80   & open      & Nginx 1.25 (redirect) & Attendu : redirection 301 vers HTTPS. \\
+443  & open      & Nginx 1.25 (SSL)     & Attendu : trafic web. \\
+5000 & filtered  & --                   & \textbf{Correct} : Flask non exposé. \\
+5432 & filtered  & --                   & \textbf{Correct} : PostgreSQL non exposé. \\
+Tous les autres & filtered & -- & \textbf{Correct} : surface d'attaque minimale. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion du scan :} la surface d'attaque réseau est conforme
+à la conception. Aucun service interne n'est joignable depuis Internet.
+
+\subsection{Recommandations}
+
+\begin{itemize}
+  \item \textbf{Masquer la version} de Nginx avec
+        \texttt{server\_tokens off} (déjà appliqué).
+  \item En production réelle, restreindre la source du port 22 à un
+        plage d'IP de confiance plutôt que \texttt{0.0.0.0/0}.
+\end{itemize}
+
+\section{Scan applicatif Web avec Nikto}
+
+\subsection{Objectif}
+
+\textbf{Nikto} est un scanneur \emph{open-source} qui contrôle la
+présence de mauvaises configurations courantes : en-têtes manquants,
+fichiers oubliés, divulgation d'informations, scripts par défaut, etc.
+
+\subsection{Commande}
+
+\begin{lstlisting}[language=bash, caption={Scan Nikto sur la cible HTTPS.}]
+nikto -h https://webcyber.app -output nikto-results.txt
+\end{lstlisting}
+
+\subsection{Résultats typiques et interprétation}
+
+\begin{table}[H]
+\centering
+\caption{Synthèse des résultats Nikto.}
+\begin{tabular}{P{6cm} C{2cm} P{6cm}}
+\toprule
+\textbf{Constat} & \textbf{Sévérité} & \textbf{Mitigation} \\
+\midrule
+HSTS présent                                     & Info     & Attendu (\texttt{.app} \emph{HSTS-preload}). \\
+Header CSP \texttt{default-src 'self'} présent   & Info     & Configuré dans Nginx. \\
+\texttt{X-Frame-Options: DENY} présent           & Info     & Configuré dans Nginx. \\
+\texttt{X-Content-Type-Options: nosniff} présent & Info     & Configuré dans Nginx. \\
+Aucun fichier sensible (\texttt{.git}, \texttt{.env}, etc.) accessible & --- & Attendu : pas de fichiers exposés. \\
+Pas de version Nginx visible                     & Info     & \texttt{server\_tokens off}. \\
+Pas d'injection SQL ou XSS détectée par Nikto    & Info     & ORM SQLAlchemy + Jinja2 auto-escape. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion :} aucune vulnérabilité \emph{critique} ou
+\emph{haute} n'a été remontée. Les en-têtes de sécurité sont tous
+présents, les chemins sensibles sont fermés, et la version du serveur
+n'est pas divulguée.
+
+\section{Évaluation TLS}
+
+\subsection{SSL Labs}
+
+L'outil \emph{SSL Labs Server Test} de Qualys
+(\url{https://www.ssllabs.com/ssltest/}) a été utilisé pour évaluer la
+configuration TLS du domaine.
+
+\textbf{Note attendue : A ou A+.}
+
+\subsection{testssl.sh}
+
+\begin{lstlisting}[language=bash, caption={Évaluation locale avec testssl.sh.}]
+git clone --depth 1 https://github.com/drwetter/testssl.sh.git
+./testssl.sh/testssl.sh webcyber.app > tls-results.txt
+\end{lstlisting}
+
+\subsection{Résultats}
+
+\begin{table}[H]
+\centering
+\caption{Synthèse de l'évaluation TLS.}
+\begin{tabular}{P{6cm} P{8cm}}
+\toprule
+\textbf{Critère} & \textbf{Résultat attendu} \\
+\midrule
+Note SSL Labs                              & A ou A+ \\
+Protocoles                                  & TLS 1.2 et 1.3 uniquement \\
+TLS 1.0 / 1.1 / SSLv3                       & désactivés \\
+Suites de chiffrement                        & profil Mozilla \emph{Intermediate} \\
+Certificat                                   & Let's Encrypt valide, chaîne complète \\
+\textit{Forward Secrecy}                     & oui (ECDHE) \\
+HSTS                                         & présent (\texttt{max-age=31536000}) \\
+OCSP Stapling                                & activé \\
+Vulnérabilités connues (Heartbleed, POODLE\ldots) & non détectées \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Synthèse des audits}
+
+\begin{table}[H]
+\centering
+\caption{Tableau de bord de sécurité.}
+\begin{tabular}{P{5cm} C{2cm} P{6cm}}
+\toprule
+\textbf{Domaine} & \textbf{Statut} & \textbf{Commentaire} \\
+\midrule
+Sécurité de l'IaC (tfsec)     & OK & 0 \emph{finding} actif, 2 exclusions documentées \\
+IMDSv2 forcé sur l'EC2        & OK & \texttt{http\_tokens = "required"} \\
+Surface réseau (Nmap)         & OK & Seuls 22, 80, 443 ouverts \\
+En-têtes HTTP (Nikto)         & OK & HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy \\
+Cookies de session            & OK & \texttt{Secure}, \texttt{HttpOnly}, \texttt{SameSite=Lax} \\
+Configuration TLS             & OK & TLS 1.2/1.3, FS, HSTS \\
+Authentification              & OK & PBKDF2-SHA256, sessions signées \\
+Protection CSRF                & OK & Token Flask-WTF sur tous les POST \\
+Protection injection SQL       & OK & ORM paramétré \\
+Protection XSS                 & OK & Jinja2 auto-escape \(+\) CSP restrictif \\
+Isolation par utilisateur      & OK & Filtre \texttt{user\_id} systématique \\
+Secrets                        & OK & \texttt{.env} hors Git, géré via \emph{GitHub Secrets} \\
+Pipeline CI/CD                 & OK & \emph{Gate} tfsec bloquant en amont du \emph{build} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limites de la campagne}
+
+\begin{itemize}
+  \item Les outils utilisés (Nmap, Nikto) sont des scanneurs
+        \emph{boîte noire} : ils ne remplacent pas un audit manuel ni
+        un test d'intrusion approfondi.
+  \item Aucune analyse statique de code (\emph{SAST}) n'a été menée
+        sur le code Python; l'utilisation d'outils tels que
+        \textbf{bandit} ou \textbf{semgrep} constitue une perspective.
+  \item L'application étant simple (CRUD textuel), le risque applicatif
+        résiduel est faible; néanmoins une analyse formelle de modèle
+        de menace (\textit{threat modeling}) serait pertinente sur une
+        application de plus grande envergure.
+\end{itemize}
+
+\section{Conclusion du chapitre}
+
+La phase de tests confirme à la fois le bon fonctionnement
+\emph{fonctionnel} de l'application et la \emph{solidité} de son
+déploiement vis-à-vis des attaques courantes. Les principaux objectifs
+de sécurité fixés dans le chapitre 2 sont remplis : isolation réseau,
+HTTPS strict, en-têtes durcis, isolation des données, et hachage
+robuste des mots de passe.

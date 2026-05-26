@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    actor U as Utilisateur
+    participant B as Navigateur
+    participant N as Nginx
+    participant F as Flask
+    participant D as PostgreSQL
+
+    Note over U, D: Phase 1 : Affichage du formulaire
+    U->>B: Clic « Nouvelle note »
+    B->>N: GET /notes/create
+    activate N
+    N->>F: proxy_pass
+    activate F
+    F-->>N: HTML formulaire (CSRF inclus)
+    deactivate F
+    N-->>B: Réponse HTTPS
+    deactivate N
+
+    Note over U, D: Phase 2 : Soumission et Enregistrement
+    U->>B: Saisit titre + contenu, valide
+    B->>N: POST /notes/create (+ CSRF)
+    activate N
+    N->>F: proxy_pass
+    activate F
+    
+    Note right of F: @login_required + CSRF check
+    
+    F->>D: INSERT INTO notes (title, content, user_id)
+    activate D
+    D-->>F: RETURNING id
+    deactivate D
+    
+    F-->>N: 302 Redirect to /notes
+    deactivate F
+    N-->>B: Réponse HTTPS
+    deactivate N
+    B-->>U: Nouvelle note affichée
+
+    Note over U, D: <b>Isolation par utilisateur :</b> Filtre strict via WHERE user_id = current_user.id.<br/>Protection native contre les failles IDOR (Insecure Direct Object Reference).

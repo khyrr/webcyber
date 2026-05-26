@@ -1,0 +1,92 @@
+% Figure 04 — Diagramme de cas d'utilisation UML
+% Acteurs : Visiteur, Utilisateur authentifié
+\documentclass[border=10pt]{standalone}
+\input{preambule.tex}
+
+\usetikzlibrary{shapes.geometric}
+
+\begin{document}
+\begin{tikzpicture}[node distance=6mm and 12mm,
+  acteur/.style={
+    draw=textdark, fill=white, line width=0.8pt,
+    minimum width=1.4cm, minimum height=1.6cm,
+    align=center, font=\small
+  },
+  uc/.style={
+    ellipse, draw=awsblue, fill=awsblue!8,
+    line width=0.6pt, align=center,
+    minimum width=3.4cm, minimum height=0.9cm,
+    font=\footnotesize, inner sep=2pt
+  },
+  systeme/.style={
+    draw=netgray, line width=0.8pt, dashed,
+    rounded corners=4pt, fill=bgsoft,
+    inner sep=14pt
+  }
+]
+
+  % --- Acteur Visiteur ---
+  \node (visitor-head) [circle, draw, minimum size=0.7cm] {};
+  \node[below=0pt of visitor-head, draw, minimum width=0.6cm,
+        minimum height=0.9cm] (visitor-body) {};
+  \node[below=0pt of visitor-body, font=\small\bfseries] (visitor-label) {Visiteur};
+  \node[fit=(visitor-head)(visitor-label),
+        inner sep=1pt] (visitor) {};
+
+  % --- Acteur Utilisateur authentifié ---
+  \node[right=12cm of visitor-head] (user-head)
+        [circle, draw, minimum size=0.7cm] {};
+  \node[below=0pt of user-head, draw, minimum width=0.6cm,
+        minimum height=0.9cm] (user-body) {};
+  \node[below=0pt of user-body, font=\small\bfseries, align=center]
+        (user-label) {Utilisateur\\authentifié};
+  \node[fit=(user-head)(user-label),
+        inner sep=1pt] (user) {};
+
+  % --- Cas d'utilisation (sans frame, on les ajoute ensuite) ---
+  \node[uc] (uc-register) at (3,1.5) {S'inscrire};
+  \node[uc] (uc-login)    at (3,0)   {Se connecter};
+  \node[uc] (uc-logout)   at (9,3)   {Se déconnecter};
+
+  \node[uc] (uc-create)  at (6,1.6)  {Créer une note};
+  \node[uc] (uc-read)    at (6,0.4)  {Consulter ses notes};
+  \node[uc] (uc-edit)    at (6,-0.8) {Éditer une note};
+  \node[uc] (uc-delete)  at (6,-2.0) {Supprimer une note};
+
+  \node[uc] (uc-archive) at (9,-0.4) {Archiver / désarchiver};
+  \node[uc] (uc-trash)   at (9,-1.6) {Corbeille \(+\) restauration};
+  \node[uc] (uc-search)  at (9,1.6)  {Rechercher une note};
+
+  % --- Frame système ---
+  \node[systeme, fit=(uc-register)(uc-login)(uc-logout)
+                     (uc-create)(uc-read)(uc-edit)(uc-delete)
+                     (uc-archive)(uc-trash)(uc-search),
+        label={[font=\small\bfseries, text=netgray]north:Système — WebCyber Notes}
+       ] (sys) {};
+
+  % --- Liens acteur Visiteur ---
+  \draw[fleche, color=textdark] (visitor.east) -- (uc-register.west);
+  \draw[fleche, color=textdark] (visitor.east) -- (uc-login.west);
+
+  % --- Liens acteur Utilisateur ---
+  \draw[fleche, color=textdark] (user.west) -- (uc-logout.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-create.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-read.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-edit.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-delete.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-archive.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-trash.east);
+  \draw[fleche, color=textdark] (user.west) -- (uc-search.east);
+
+  % --- Relation include : Login << include >> Auth check ---
+  \draw[-{Latex[length=2mm]}, dashed, color=accentred]
+    (uc-create) -- node[etiquette, sloped, font=\tiny, text=accentred]
+                 {\guillemotleft\,include\,\guillemotright}
+                 (uc-login);
+  \draw[-{Latex[length=2mm]}, dashed, color=accentred]
+    (uc-edit) -- node[etiquette, sloped, font=\tiny, text=accentred]
+                 {\guillemotleft\,include\,\guillemotright}
+                 (uc-login);
+
+\end{tikzpicture}
+\end{document}

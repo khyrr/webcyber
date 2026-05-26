@@ -1,0 +1,28 @@
+classDiagram
+    direction LR
+
+    class User {
+        id : Integer
+        username : String
+        email : String
+        password_hash : String
+        created_at : DateTime
+        check_password()
+        set_password()
+    }
+
+    class Note {
+        id : Integer
+        title : String
+        content : Text
+        user_id : Integer
+        is_archived : Boolean
+        is_trashed : Boolean
+        created_at : DateTime
+        updated_at : DateTime
+        archive()
+        restore()
+        move_to_trash()
+    }
+
+    User "1" -- "0..*" Note : possède

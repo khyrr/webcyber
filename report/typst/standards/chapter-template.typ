@@ -1,0 +1,1 @@
+// standards/chapter-template.typ - Not used in formal academic style
