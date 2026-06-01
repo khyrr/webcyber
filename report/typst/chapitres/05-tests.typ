@@ -39,7 +39,7 @@ a été correctement traité ou documenté.
 
 #figure(
   table(
-    columns: (1.5cm, 3.8cm, 4cm, 7cm),
+    columns: (auto, auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -89,6 +89,11 @@ tentatives avec des données invalides ou duplicées sont rejetées.
   ),
   caption: [Tests d'inscription.],
 ) <tab-test-inscription>
+
+#figure(
+  image("../figures/img/placeholder.png", width: 85%),
+  caption: [Exemple de messages d'erreur lors d'une saisie invalide.],
+) <fig-test-validation>
 
 #figure(
   table(
@@ -173,6 +178,11 @@ Reference).
   caption: [Tests d'isolation par utilisateur.],
 ) <tab-test-isolation>
 
+#figure(
+  image("../figures/img/placeholder.png", width: 85%),
+  caption: [Protection IDOR : erreur 404 lors de l'accès à la note d'un autre utilisateur.],
+) <fig-test-404>
+
 *Résultat* : L'application bloque toute tentative grâce au filtre
 `filter_by(user_id=current_user.id)` systématique combiné à
 `first_or_404()`.
@@ -200,7 +210,7 @@ analysé et a reçu une décision explicite :
 
 #figure(
   table(
-    columns: (3.8cm, 1.5cm, 4.5cm, 7cm),
+    columns: (auto, auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -215,6 +225,11 @@ analysé et a reçu une décision explicite :
   ),
   caption: [Constats tfsec sur le module Terraform et décisions associées.],
 ) <tab-tfsec>
+
+#figure(
+  image("../figures/img/placeholder.png", width: 90%),
+  caption: [Exécution de tfsec : détection et validation des règles ignorées.],
+) <fig-test-tfsec>
 
 === Interprétation des décisions
 
@@ -267,11 +282,63 @@ publié sur l'hôte).
 *Ce qui a été testé* : L'application répond-elle correctement sur
 HTTP et HTTPS ?
 
-*Résultat* : 
-- `curl -I http://webcyber.app` → 301 Moved Permanently
-- `curl -I https://webcyber.app` → 200 OK (HTTP/2)
+*Résultat* :
 
-La redirection fonctionne, et le certificat Let's Encrypt est actif.
+#figure(
+  kind: "code",
+  supplement: [Terminal],
+  caption: [Redirection automatique HTTP vers HTTPS.],
+)[
+  #set text(size: 8.5pt, font: "DejaVu Sans Mono")
+  #set block(
+    inset: 10pt,
+    stroke: 0.5pt + rgb(210, 210, 210),
+    radius: 4pt,
+    width: 100%,
+  )
+```bash
+$ curl -I http://webcyber.app
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.25.5
+Date: Mon, 01 Jun 2026 13:46:32 GMT
+Content-Type: text/html
+Content-Length: 169
+Connection: keep-alive
+Location: https://webcyber.app/
+```
+] <code-curl-http>
+
+
+
+
+#figure(
+  kind: "code",
+  supplement: [Terminal],
+  caption: [Vérification des en-têtes de sécurité avec curl.],
+)[
+  #set text(size: 8.5pt, font: "DejaVu Sans Mono")
+  #set block(
+    inset: 10pt,
+    stroke: 0.5pt + rgb(210, 210, 210),
+    radius: 4pt,
+    width: 100%,
+  )
+```bash
+$ curl -I https://webcyber.app/
+HTTP/1.1 302 FOUND
+Server: nginx
+Date: Mon, 01 Jun 2026 13:14:27 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 209
+Connection: keep-alive
+Location: /auth/login
+Vary: Cookie
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+```] <code-curl-headers>
 
 // ==============================================================================
 // 6. SCAN DE PORTS AVEC NMAP
@@ -288,13 +355,40 @@ d'entrée potentielle pour un attaquant. L'objectif est de confirmer
 que la surface d'attaque réseau correspond exactement à la conception
 (chapitre 3).
 
-*Commande utilisée* : `nmap -sV -p- webcyber.app`
+*Commande utilisée* : `sudo nmap -Pn -sS -n --min-rate 5000 -T4 80 54.165.116.113 -p-`
+
+#figure(
+  kind: "code",
+  supplement: [Terminal],
+  caption: [Scan Nmap des deux cibles.],
+)[
+  #set text(size: 8.5pt, font: "DejaVu Sans Mono")
+  #set block(
+    inset: 10pt,
+    stroke: 0.5pt + rgb(210, 210, 210),
+    radius: 4pt,
+    width: 100%,
+  )
+```bash
+$ sudo nmap -Pn -sS -n --min-rate 5000 -T4 80 54.165.116.113 -p-
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-06-01 15:15 CET
+Nmap scan report for 54.165.116.113
+Host is up (0.043s latency).
+Not shown: 65532 filtered tcp ports (no-response)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+443/tcp  open  https
+
+Nmap done: 1 IP addresses (1 hosts up) scanned in 66.21 seconds
+```
+] <code-nmap>
 
 === Résultats et interprétation
 
 #figure(
   table(
-    columns: (2.8cm, 1.8cm, 4cm, 6.5cm),
+    columns: (auto, auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -302,21 +396,18 @@ que la surface d'attaque réseau correspond exactement à la conception
       return 0.3pt + rgb(200, 200, 200)
     },
     inset: 6pt,
-    [*Port*], [*État*], [*Service*,], [*Analyse et justification*],
-    [22/tcp], [open], [OpenSSH 8.x], [Attendu : administration. Accès limité par clé SSH (pas de mot de passe)],
-    [80/tcp], [open], [Nginx 1.25 (redirect)], [Attendu : redirection 301 permanente vers HTTPS],
-    [443/tcp], [open], [Nginx 1.25 (SSL)], [Attendu : trafic web chiffré],
-    [5000/tcp], [filtered], [--], [*Correct* : Flask non exposé (conforme à la conception Docker)],
-    [5432/tcp], [filtered], [--], [*Correct* : PostgreSQL non exposé (conforme à la conception Docker)],
-    [Autres ports], [filtered], [--], [*Correct* : surface d'attaque minimale],
+    [*Port*], [*État*], [*Service*], [*Analyse et justification*],
+    [22/tcp], [open], [SSH], [Attendu : administration. Accès limité par clé SSH (pas de mot de passe)],
+    [80/tcp], [open], [HTTP], [Attendu : redirection 301 permanente vers HTTPS],
+    [443/tcp], [open], [HTTPS], [Attendu : trafic web chiffré],
+    [Autres 65532 ports], [filtered], [--], [*Correct* : surface d'attaque minimale],
   ),
   caption: [Résultats du scan Nmap.],
 ) <tab-nmap>
 
 === Conclusion et recommandations
 
-La surface d'attaque réseau est *conforme à la conception*.
-Aucun service interne n'est joignable depuis Internet.
+La surface d'attaque réseau est *conforme* à la conception.
 
 *Recommandations pour une production réelle* :
 - Restreindre la source du port 22 (SSH) à une plage d'IP de
@@ -343,7 +434,7 @@ ou des informations de version divulguées.
 
 #figure(
   table(
-    columns: (7.9cm, 1.9cm, 6.8cm),
+    columns: (auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -362,6 +453,11 @@ ou des informations de version divulguées.
   ),
   caption: [Synthèse des résultats Nikto.],
 ) <tab-nikto>
+
+#figure(
+  image("../figures/img/placeholder.png", width: 90%),
+  caption: [Rapport d'exécution de Nikto confirmant l'absence de vulnérabilités critiques.],
+) <fig-test-nikto>
 
 === Conclusion
 
@@ -391,7 +487,7 @@ algorithmes faibles, certificats invalides).
 
 #figure(
   table(
-    columns: (8cm, 8cm),
+    columns: (auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -413,6 +509,11 @@ algorithmes faibles, certificats invalides).
   caption: [Synthèse de l'évaluation TLS.],
 ) <tab-tls>
 
+#figure(
+  image("../figures/img/placeholder.png", width: 85%),
+  caption: [Résultat SSL Labs démontrant l'obtention de la note A.],
+) <fig-test-ssllabs>
+
 === Conclusion
 
 La configuration TLS est *robuste* et obtient une note A sur SSL Labs.
@@ -430,7 +531,7 @@ HSTS avec préchargement (déjà applicable en production réelle).
 
 #figure(
   table(
-    columns: (4cm, 2cm, 10cm),
+    columns: (auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -441,7 +542,7 @@ HSTS avec préchargement (déjà applicable en production réelle).
     [*Domaine*], [*Statut*], [*Commentaire*],
     [Sécurité de l'IaC (tfsec)], [OK], [0 finding actif non traité ; 2 exclusions documentées avec justification],
     [IMDSv2 forcé sur l'EC2], [OK], [`http_tokens = "required"` (corrigé après audit tfsec)],
-    [Surface réseau (Nmap)], [OK], [Seuls 22, 80, 443 ouverts ; Flask/PostgreSQL invisibles],
+    [Surface réseau (Nmap)], [OK], [22, 80, 443 ouverts],
     [En-têtes HTTP (Nikto)], [OK], [HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy présents],
     [Cookies de session], [OK], [Attributs `Secure`, `HttpOnly`, `SameSite=Lax` configurés],
     [Configuration TLS], [OK], [TLS 1.2/1.3 uniquement, Forward Secrecy, note A sur SSL Labs],
@@ -488,6 +589,9 @@ nécessaire.
 // ==============================================================================
 // 11. CONCLUSION
 // ==============================================================================
+// 
+// 
+#pagebreak()
 == Conclusion du chapitre
 
 La phase de tests confirme deux points essentiels :
@@ -498,7 +602,7 @@ La phase de tests confirme deux points essentiels :
 
 2. *Sécurité* : Les six couches de défense (chapitre 3) ont été
    validées :
-   - Security Group : seuls 3 ports ouverts
+   - Security Group : seuls 3 ports ouverts (22, 80, 443)
    - Système hôte : clé SSH, mises à jour auto
    - Docker : isolation réseau, utilisateur non-root
    - Nginx : TLS A, en-têtes de sécurité

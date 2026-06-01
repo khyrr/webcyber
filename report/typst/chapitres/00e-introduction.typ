@@ -64,7 +64,7 @@ La planification s'organise en cinq sprints :
 
 #figure(
   table(
-    columns: (1cm, 2cm, 3.5cm, 4cm, 4cm),
+    columns: (2cm, 2cm, 3.5cm, 6cm, 2.8cm),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }

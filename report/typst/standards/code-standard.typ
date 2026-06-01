@@ -11,13 +11,13 @@
     supplement: [Code],
     caption: caption,
   )[
-    #set raw(
-      size: 9pt,
-      font: "Courier New",
+    #set text(size: 9pt, font: "Courier New")
+    #block(
       inset: 10pt,
-      stroke: 0.5pt + rgb(200, 200, 200),  // Use direct RGB instead of variable
-    )
-    #raw(code, lang: lang)
+      stroke: 0.5pt + rgb(200, 200, 200),
+    )[
+      #raw(code, lang: lang)
+    ]
   ]
 }
 
@@ -38,13 +38,13 @@
     supplement: [Terminal],
     caption: caption,
   )[
-    #set raw(
-      size: 9pt,
-      font: "Courier New",
+    #set text(size: 9pt, font: "Courier New")
+    #block(
       inset: 10pt,
-      stroke: 0.5pt + rgb(200, 200, 200),  // Use direct RGB
-    )
-    #raw(full-code, lang: "bash")
+      stroke: 0.5pt + rgb(200, 200, 200),
+    )[
+      #raw(full-code, lang: "bash")
+    ]
   ]
 }
 

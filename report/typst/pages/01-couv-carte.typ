@@ -111,7 +111,7 @@
       #names
     ]
     
-    #v(3.5cm)
+    #v(4cm)
     
     #text(style: "italic", size: 10pt, fill: iscae-blue)[Année Universitaire : #academicYear]
   ]

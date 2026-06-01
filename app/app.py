@@ -44,6 +44,12 @@ def create_app():
     def index():
         return redirect(url_for("auth.login"))
 
+    # Custom Error Handlers
+    @app.errorhandler(404)
+    def page_not_found(e):
+        from flask import render_template
+        return render_template('404.html'), 404
+
     from app.commands import init_db
     app.cli.add_command(init_db)
 

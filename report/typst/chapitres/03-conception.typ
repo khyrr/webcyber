@@ -145,7 +145,7 @@ automatiquement autorisée en sortie.
 
 #figure(
   table(
-    columns: (2cm, 2cm, 1.5cm, 4cm, 6cm),
+    columns: (2cm, 2.5cm, 1.5cm, 2cm, 7cm),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -198,7 +198,7 @@ distributions Linux minimalistes contiennent moins de paquets
 
 #figure(
   table(
-    columns: (3cm, 6cm, 3cm, 1fr),
+    columns: (3cm, 4.8cm, 3cm, 1fr),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }

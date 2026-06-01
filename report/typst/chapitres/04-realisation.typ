@@ -174,7 +174,7 @@ Les trois services sont conteneurisés pour garantir :
 
 #figure(
   table(
-    columns: (3cm, 6cm, 3cm, 1fr),
+    columns: (1.7cm, 3.8cm, 3cm, 1fr),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -239,7 +239,7 @@ la branche `main`. Il comporte trois jobs séquentiels :
 
 #figure(
   table(
-    columns: (1.5cm, 4cm, 11cm),
+    columns: (auto, auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -262,7 +262,7 @@ injectés via GitHub Secrets :
 
 #figure(
   table(
-    columns: (4cm, 10cm),
+    columns: (auto, auto),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }

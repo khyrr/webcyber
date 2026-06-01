@@ -70,7 +70,7 @@ et user stories agiles.
 
 #figure(
   table(
-    columns: (1.2cm, 5cm, 10cm),
+    columns: (1.2cm, 4cm, 10cm),
     align: (left,),
     stroke: (x, y) => {
       if y == 0 { return 1pt + black }
@@ -106,7 +106,6 @@ et user stories agiles.
     [BF-09], [Mettre à la corbeille], [Note masquée, restauration possible.],
     [BF-10], [Restaurer une note], [Retour de la note dans la liste principale.],
     [BF-11], [Supprimer définitivement], [Suppression DELETE en base, irréversible.],
-    [*ID*], [*Besoin*], [*Description*],
     [BF-12], [Rechercher une note], [Filtre par titre/contenu, résultats limités au compte courant.],
     [BF-13], [Isolation des données], [Toute requête filtrée par `user_id` de la session.],
   ),
